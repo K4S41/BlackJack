@@ -1,0 +1,442 @@
+import tkinter as tk
+import random
+from time import sleep
+from sys import exit
+from PIL import Image, ImageTk
+from language import dict_en_cz
+from configparser import ConfigParser
+#nahrání dat z dokumentu config.ini
+config = ConfigParser()
+config.read("config.ini")
+#nadefinování defaultních proměnných ze souboru config.ini
+num_pack10 = int(config["Settings"]["packages"])
+starting_budget20 = int(config["Settings"]["budget"])
+b_strategy30 = bool(config["Settings"]["strategy"])
+lang40 = int(config["Settings"]["language"])
+
+#vytvoření hlavního okna hry - tzv. herní plochy
+#===============================================================================
+class CGameTable:
+  #--------------------------------------------------------------------------------
+  def __init__(self, amenu_bg_color="#228822",abutt_bg_color="#ccccff",abutton_state=True):
+    self.bg_color=amenu_bg_color
+    #vytvoření herního rozhraní - herní desky
+    self.button_state = abutton_state
+    config.read("config.ini")
+    lang40 = int(config["Settings"]["language"])
+    self.table = tk.Tk()
+    self.table.title("BlackJackGame")
+    self.table.configure(background=self.bg_color)
+    self.table.resizable(False, False)
+    self.table.protocol("WM_DELETE_WINDOW", lambda: self.table.destroy())
+    #rozměry herního okna a celkové rozměry obrazovky
+    self.table_width = 800
+    self.table_height = 600
+    screen_width = self.table.winfo_screenwidth()
+    screen_height = self.table.winfo_screenheight()
+    #vycentrování herního okna
+    self.table.geometry(
+        f"{self.table_width}x{self.table_height}+{int((screen_width - self.table_width)/2)}+{int((screen_height - self.table_height)/2)}")
+
+    #vytvoření hráče 1
+    self.player1=CPlayer()
+
+    #vytvoření dealera
+    self.dealer = CPlayer()
+
+    #vytvoření herního dobíracího balíčku
+    self.drawing_deck = CDeck(anum_decks=num_pack10)
+
+    #zamíchání balíčku
+    self.drawing_deck.shuffle()
+
+    #vytvoření prázdného odhazovacího balíčku
+    self.discard_deck = CDeck(anum_decks=0)
+
+    #vytvoří dolní lištu herního menu
+
+    self.table_game_menu = tk.Canvas(self.table,
+                                     width=self.table_width,
+                                     height=self.table_height / 8,
+                                     bg="#ddddff")
+    self.table_game_menu.create_line(0,
+                                     2,
+                                     self.table_width,
+                                     2,
+                                     fill="#000000",
+                                     width=2)  # Přidání horního ohraničení
+    self.table_game_menu.place(x=0,
+                               y=self.table_height - self.table_height / 8)
+
+    #vytvoří rozhodovací herní tlačítka
+    self.deal_button = tk.Button(self.table,
+                                 text="Deal",
+                                 font=("Arial", 10, "bold"),
+                                 width=8,
+                                 border=2,
+                                 state=tk.NORMAL,
+                                 bg=abutt_bg_color,
+                                 command=lambda: self.deal_cards())
+    self.hit_button = tk.Button(self.table,
+                                text="Hit",
+                                font=("Arial", 10, "bold"),
+                                width=8,
+                                border=2,
+                                state=tk.DISABLED,
+                                bg=abutt_bg_color,
+                                command=lambda: self.hit())
+    self.stand_button = tk.Button(self.table,
+                                  text="Stand",
+                                  font=("Arial", 10, "bold"),
+                                  width=8,
+                                  border=2,
+                                  bg=abutt_bg_color,
+                                  state=tk.DISABLED,
+                                  command=lambda: print(self.player1.hand.cards[1].suit,
+                                  self.player1.hand.cards[1].rank))
+    self.double_button = tk.Button(self.table,
+                                   text="Double",
+                                   font=("Arial", 10, "bold"),
+                                   width=8,
+                                   border=2,
+                                   state=tk.DISABLED,
+                                   bg=abutt_bg_color,
+                                   command=lambda: print(self.dealer.hand.cards[0].suit,
+                                   self.dealer.hand.cards[0].rank))
+    self.split_button = tk.Button(self.table,
+                                  text="Split",
+                                  font=("Arial", 10, "bold"),
+                                  width=8,
+                                  border=2,
+                                  state=tk.DISABLED,
+                                  bg=abutt_bg_color)
+    self.insurance_button = tk.Button(self.table,
+                                      text="Insurance",
+                                      font=("Arial", 10, "bold"),
+                                      width=8,
+                                      border=2,
+                                      state=tk.DISABLED,
+                                      bg=abutt_bg_color,)
+
+    #vytvoří objekty, které jsou popisky tlačítek
+    CWidgetInfo(self.deal_button, "deal_button_note")
+    CWidgetInfo(self.hit_button, "hit_button_note")
+    CWidgetInfo(self.stand_button, "stand_button_note")
+    CWidgetInfo(self.double_button, "double_button_note")
+    CWidgetInfo(self.split_button, "split_button_note")
+    CWidgetInfo(self.insurance_button, "insurance_button_note")
+    #umístění herních tlačítek do dolní lišty herního menu
+    self.deal_button.place(
+        x=(self.table_width / 7 - self.hit_button.winfo_reqwidth()) / 2,
+        y=(self.table_height - self.table_height / 8) +
+        (self.table_height / 8 - self.hit_button.winfo_reqheight()) / 2)
+    self.hit_button.place(
+        x=self.table_width / 7 +
+        (self.table_width / 7 - self.hit_button.winfo_reqwidth()) / 2,
+        y=(self.table_height - self.table_height / 8) +
+        (self.table_height / 8 - self.hit_button.winfo_reqheight()) / 2)
+    self.stand_button.place(
+        x=self.table_width / 7 * 2 +
+        (self.table_width / 7 - self.hit_button.winfo_reqwidth()) / 2,
+        y=(self.table_height - self.table_height / 8) +
+        (self.table_height / 8 - self.hit_button.winfo_reqheight()) / 2)
+    self.double_button.place(
+        x=self.table_width / 7 * 3 +
+        (self.table_width / 7 - self.hit_button.winfo_reqwidth()) / 2,
+        y=(self.table_height - self.table_height / 8) +
+        (self.table_height / 8 - self.hit_button.winfo_reqheight()) / 2)
+    self.split_button.place(
+        x=self.table_width / 7 * 4 +
+        (self.table_width / 7 - self.hit_button.winfo_reqwidth()) / 2,
+        y=(self.table_height - self.table_height / 8) +
+        (self.table_height / 8 - self.hit_button.winfo_reqheight()) / 2)
+    self.insurance_button.place(
+        x=self.table_width / 7 * 5 +
+        (self.table_width / 7 - self.hit_button.winfo_reqwidth()) / 2,
+        y=(self.table_height - self.table_height / 8) +
+        (self.table_height / 8 - self.hit_button.winfo_reqheight()) / 2)
+
+    #vytvoření ukazatele zbývajících finančníhc prostředků
+    self.display_budget = tk.Label(
+        self.table,
+        text=
+        f"{dict_en_cz['your'][lang40]} {dict_en_cz['budget'][lang40].lower()}${starting_budget20}",
+        font=("Arial", 12, "bold"),
+        bg=self.bg_color,
+        foreground="#dddd00")
+    self.display_budget.pack()
+    #přiřazení 'escape' funkce klávese Esc
+    self.table.bind(
+        '<Escape>',
+        lambda e, bg_color="#ddddee": CEscWin(bg_color))
+
+  #--------------------------------------------------------------------------------
+  def deal_cards(self):
+    #rozdání karet hráči
+    self.drawing_deck.move_card(self.player1.hand)
+    self.drawing_deck.table_cleaner(self.player1.hand)
+    self.drawing_deck.move_card(self.player1.hand)
+    #rozdání karet dealerovi
+    self.drawing_deck.move_card(self.dealer.hand, ay=50)
+    self.drawing_deck.table_cleaner(self.dealer.hand)
+    self.drawing_deck.move_card(self.dealer.hand, ay=50)
+    #self.drawing_deck.place_reverse_side(ax=300,ay=50)
+    self.checker()
+    #--------------------------------------------------------------------------------
+  #funkce pro změnu stavu tlačítek
+  def checker(self):
+    #nadefinování a nastavení defaultních hodnot tlačítek po spuštění fce
+    b_deal = 0
+    b_hit = 1
+    b_stand = 1
+    b_double = 0
+    b_split = 0
+    b_insurance = 0
+    
+    hand = self.player1.hand
+    if hand.calculate_hand_value(hand)>21:
+      print("You have lose!")
+      self.button_states(1,0,0,0,0,0)
+      
+    if len(hand.cards)==2:
+      if hand.calculate_hand_value(hand)==21:
+        self.button_states(1,0,0,0,0,0)
+        
+    if len(hand.cards)==2:
+      if hand.cards[0].rank == hand.cards[1].rank: 
+        b_split = 1
+      else: 
+        b_split = 0
+    
+    self.button_states(b_deal, b_hit, b_stand, b_double, b_split, b_insurance)
+  #--------------------------------------------------------------------------------
+  #funkce k přepínání tlačítek, jestli jsou nebo nejsou aktivní 0 - vypnuto, 1 - zapnuto
+  def button_states(self,ab_deal=1,ab_hit=0,ab_stand=0,ab_double=0,ab_split=0,ab_insurance=0):
+    if ab_deal==1:self.deal_button.config(state=tk.NORMAL)
+    else:self.deal_button.config(state=tk.DISABLED)
+    if ab_hit==1:self.hit_button.config(state=tk.NORMAL)
+    else:self.hit_button.config(state=tk.DISABLED)
+    if ab_stand==1:self.stand_button.config(state=tk.NORMAL)
+    else:self.stand_button.config(state=tk.DISABLED)
+    if ab_double==1:self.double_button.config(state=tk.NORMAL)
+    else:self.double_button.config(state=tk.DISABLED)
+    if ab_split==1:self.split_button.config(state=tk.NORMAL)
+    else:self.split_button.config(state=tk.DISABLED)
+    if ab_insurance==1:self.insurance_button.config(state=tk.NORMAL)
+    else:self.insurance_button.config(state=tk.DISABLED)   
+      #--------------------------------------------------------------------------------
+  #přidání karty hráči
+  def hit(self):
+    self.drawing_deck.table_cleaner(self.player1.hand)
+    self.drawing_deck.move_card(self.player1.hand)
+    self.checker()
+    
+    #===============================================================================
+#vytvoření okna ukončení hry
+class CEscWin:
+  #--------------------------------------------------------------------------------
+  def __init__(self, bg_color="#ddddee", abutt_bg_color="#ccccff"):
+    self.esc_window = tk.Toplevel()
+    self.esc_window.configure(bg=bg_color)
+    self.esc_window.title(dict_en_cz["quit"][lang40])
+    screen_width = self.esc_window.winfo_screenwidth()
+    screen_height = self.esc_window.winfo_screenheight()
+    self.esc_window_width = 200
+    self.esc_window_height = 80
+    self.esc_window.geometry(
+        f"{self.esc_window_width}x{self.esc_window_height}+{int((screen_width-self.esc_window_width)/2)}+{int((screen_height-self.esc_window_height)/2)}"
+    )
+    self.esc_window.resizable(False, False)
+    self.esc_window.protocol("WM_DELETE_WINDOW",
+                             lambda: self.esc_window.destroy())
+    #nebudu prováděna žádná akce, dokud nebude vyřešeno tlačítko
+    self.esc_window.grab_set()
+    #popisek 'Escape' okna
+    self.label = tk.Label(self.esc_window,
+                          text=dict_en_cz["want_quit"][lang40],
+                          bg=bg_color,
+                          font=("Arial", 11))
+    self.label.place(x=5, y=5)
+    #nadefinování tlačítek 'Escape' okna a jejich umístění v okně
+    self.button_quit = tk.Button(self.esc_window,
+                                 text=dict_en_cz["quit"][lang40],
+                                 bg=abutt_bg_color,
+                                 width=5,
+                                 font=("Arial", 10, "bold"),
+                                 borderwidth=3,
+                                 command=lambda: exit())
+    self.button_close = tk.Button(self.esc_window,
+                                  text=dict_en_cz["close"][lang40],
+                                  bg=abutt_bg_color,
+                                  width=5,
+                                  font=("Arial", 10, "bold"),
+                                  borderwidth=3,
+                                  command=lambda: self.esc_window.destroy())
+    #umístění tlačítek close a quit
+    self.button_quit.place(x=5, y=30)
+    self.button_close.place(x=100, y=30)
+
+#===============================================================================
+#vytvoření popisných oken k tlačítkům
+class CWidgetInfo:
+  #--------------------------------------------------------------------------------
+  #vytvoří popisný štítek k tlačítkům d následujícími vlastnostmi
+  def __init__(self, awidget, atext):
+    self.widget = awidget
+    self.text = atext
+    self.tooltip = None
+    self.widget.bind("<Enter>", self.show_tooltip)
+    self.widget.bind("<Leave>", self.hide_tooltip)
+  #--------------------------------------------------------------------------------
+  #zobrazí popisný štítek k tlačítku
+  def show_tooltip(self, aevent):
+    #aktualizace jazyka
+    config.read("config.ini")
+    lang40 = int(config["Settings"]["language"])
+
+    #lokalizace informačního widgetu
+    x, y, _, _ = self.widget.bbox("insert")
+    x = x + self.widget.winfo_rootx() + 25
+    y = y + self.widget.winfo_rooty() + 30
+
+    self.tooltip = tk.Toplevel(self.widget)
+    self.tooltip.wm_overrideredirect(True)
+    self.tooltip.wm_geometry(f"+{x}+{y}")
+
+    #popisek uvnitř informačního widgetu
+    label = tk.Label(self.tooltip,
+                     text=dict_en_cz[self.text][lang40],
+                     background="#ffffe0",
+                     relief="solid",
+                     borderwidth=1)
+    label.pack(ipadx=1)
+  #--------------------------------------------------------------------------------
+  #zrušení okna popisku
+  def hide_tooltip(self, event):
+    if self.tooltip:
+      self.tooltip.destroy()
+
+
+#===============================================================================
+#vytvoří kartu příslušné barvy, nominální a numerické hodnoty
+class Card:
+  card_values = {
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      '6': 6,
+      '7': 7,
+      '8': 8,
+      '9': 9,
+      '10': 10,
+      'Jack': 10,
+      'Queen': 10,
+      'King': 10,
+      'Ace': 11}
+  #--------------------------------------------------------------------------------
+  def __init__(self, asuit, arank):
+    self.suit = asuit
+    self.rank = arank
+    self.value = self.card_values[arank]
+
+#===============================================================================
+#Vytvoří balíček hracích karet
+class CDeck:
+  #--------------------------------------------------------------------------------
+  def __init__(self, anum_decks=1):
+     #vytvoří slovník jehož klíče jsou jednotlivé 'barev' a hodnoty jsou seznamy hodnot karet
+    self.card_photo={suit: [] for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades']}
+    #vytvoří balíčky 52 karet a uloží je do seznamu self.cards
+    if anum_decks > 0:
+      self.cards = [
+          Card(suit, rank) for _ in range(anum_decks)
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in [
+              '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
+              'King', 'Ace']]
+      random.shuffle(self.cards)
+    else:
+      self.cards = []
+    #vytvoří seznam obrázků karet a uloží je do seznamů slovníků self.card_photo
+    for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades']:
+      for rank in ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']:
+        obverse_side_image = Image.open(f"./cards/{suit}/{rank}.gif")
+        obverse_side_photo = ImageTk.PhotoImage(obverse_side_image)
+        self.card_photo[suit].append(obverse_side_photo)
+  #--------------------------------------------------------------------------------
+  # balíček umí umístit kartu z jednoho  do druhého balíčku
+  def move_card(self, ato, afrom=None,ay=300):
+    #převede rank dané karty na přesnou pozici obrázku karty v seznamu slovníku self.card_photo
+    rank_to_list_pos_convertor = {'2':0, '3':1, '4':2, '5':3, '6':4, '7':5, '8':6, '9':7,
+                                  '10':8, 'Jack':9, 'Queen':10, 'King':11, 'Ace':12}
+    t_width = game.table_width
+
+    card_to_move = afrom.draw_card() if afrom else self.draw_card()
+    ato.cards.append(card_to_move)
+    if card_to_move is not None:
+
+
+
+      for i in range(len(ato.cards)):
+        self.label = tk.Label(game.table, image=self.card_photo[ato.cards[i].suit]
+                         [rank_to_list_pos_convertor[ato.cards[i].rank]])
+        # zkrácení zápisu pro použití v metodě place
+        lcs = len(ato.cards)
+        # metoda place umístí obrázky vyložených karet přesně na střed okna
+        # šířka obrázku karty je 104 pxl
+        self.label.place(x=(t_width-(250*(lcs-1)/(lcs)+104))/2+(250*i)/lcs, y=ay)
+
+      #vytvoří ukazatel součtu hodnoty karet
+      self.value_total = tk.Label(game.table, text=f"{self.calculate_hand_value(ato)}",
+                             font=("Arial", 11),
+                             fg="#000000",
+                             bg=game.bg_color)
+      self.value_total.place(x=(t_width)/2-10, y=ay-25)
+  #--------------------------------------------------------------------------------
+  def calculate_hand_value(self,ahand):
+    total_value = 0
+    for card in ahand.cards:
+        total_value += int(card.value)
+    self.hand_value = total_value
+    return total_value
+  #--------------------------------------------------------------------------------
+  #balíček umí odevzdávat karty k dalšímu použití
+  def draw_card(self):
+    if len(self.cards) == 0:
+      return None
+    return self.cards.pop()
+  #--------------------------------------------------------------------------------
+  #vyhodí obrázky karet ze stolu
+  def table_cleaner(self,ato):
+    for _ in range(len(ato.cards)):
+      self.label.place_forget()
+  #--------------------------------------------------------------------------------
+  """  
+  #nahrání image pro rubovou stranu karty do widgetu
+  def place_reverse_side(self, ax=500,ay=300): 
+    self.reverse_side_image = Image.open("./cards/red_back.gif")
+    self.reverse_side_photo = ImageTk.PhotoImage(self.reverse_side_image)
+    self.reverse_side = tk.Label(game.table, image=self.reverse_side_photo)
+    #umístění obrázku rubová strany karty
+    self.reverse_side.place(x=ax,y=ay)
+  """
+  #--------------------------------------------------------------------------------
+  #funkce, která zamíchá balíček/seznam
+  def shuffle(self):
+    random.shuffle(self.cards)
+
+#===============================================================================
+#třída, která vytvoří hráče
+class CPlayer:
+  #--------------------------------------------------------------------------------
+  def __init__(self):
+    self.budget = starting_budget20
+    self.hand = CDeck(anum_decks=0)
+    self.split_hand = CDeck(anum_decks=0)
+    self.bet_amount = 1
+    
+#===============================================================================
+#inicializuje vytvoření herní desky ,balíčků kret, hráče a dealera
+def create_game_window():
+  global game
+  game=CGameTable()
