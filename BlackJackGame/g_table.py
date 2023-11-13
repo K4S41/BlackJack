@@ -5,22 +5,22 @@ from sys import exit
 from PIL import Image, ImageTk
 from language import dict_en_cz
 from configparser import ConfigParser
-#nahrání dat z dokumentu config.ini
+#config.ini data loading
 config = ConfigParser()
 config.read("config.ini")
-#nadefinování defaultních proměnných ze souboru config.ini
+#definition of default variables from config.ini
 num_pack10 = int(config["Settings"]["packages"])
 starting_budget20 = int(config["Settings"]["budget"])
 b_strategy30 = bool(config["Settings"]["strategy"])
 lang40 = int(config["Settings"]["language"])
 
-#vytvoření hlavního okna hry - tzv. herní plochy
+#main window creating
 #===============================================================================
 class CGameTable:
   #--------------------------------------------------------------------------------
   def __init__(self, amenu_bg_color="#228822",abutt_bg_color="#ccccff",abutton_state=True):
     self.bg_color=amenu_bg_color
-    #vytvoření herního rozhraní - herní desky
+    #game interface crating - board
     self.button_state = abutton_state
     config.read("config.ini")
     lang40 = int(config["Settings"]["language"])
@@ -29,46 +29,48 @@ class CGameTable:
     self.table.configure(background=self.bg_color)
     self.table.resizable(False, False)
     self.table.protocol("WM_DELETE_WINDOW", lambda: self.table.destroy())
-    #rozměry herního okna a celkové rozměry obrazovky
+    #game window size
     self.table_width = 800
     self.table_height = 600
     screen_width = self.table.winfo_screenwidth()
     screen_height = self.table.winfo_screenheight()
-    #vycentrování herního okna
+    #get game window into screen center
     self.table.geometry(
         f"{self.table_width}x{self.table_height}+{int((screen_width - self.table_width)/2)}+{int((screen_height - self.table_height)/2)}")
 
-    #vytvoření hráče 1
+    #create player 1
     self.player1=CPlayer()
 
-    #vytvoření dealera
+    #create dealer
     self.dealer = CPlayer()
 
-    #vytvoření herního dobíracího balíčku
+    #create drawing deck
     self.drawing_deck = CDeck(anum_decks=num_pack10)
 
-    #zamíchání balíčku
+    #shuffle drawwind deck
     self.drawing_deck.shuffle()
 
-    #vytvoření prázdného odhazovacího balíčku
+    #create discard deck
     self.discard_deck = CDeck(anum_decks=0)
 
-    #vytvoří dolní lištu herního menu
+    #create game menu panel
 
     self.table_game_menu = tk.Canvas(self.table,
                                      width=self.table_width,
                                      height=self.table_height / 8,
                                      bg="#ddddff")
+    # bottom menu border 
     self.table_game_menu.create_line(0,
                                      2,
                                      self.table_width,
                                      2,
                                      fill="#000000",
-                                     width=2)  # Přidání horního ohraničení
+                                     width=2)  
     self.table_game_menu.place(x=0,
                                y=self.table_height - self.table_height / 8)
 
-    #vytvoří rozhodovací herní tlačítka
+    #create game buttons
+    # button "deal cards"
     self.deal_button = tk.Button(self.table,
                                  text="Deal",
                                  font=("Arial", 10, "bold"),
@@ -77,6 +79,7 @@ class CGameTable:
                                  state=tk.NORMAL,
                                  bg=abutt_bg_color,
                                  command=lambda: self.deal_cards())
+    # button "draw a new card"
     self.hit_button = tk.Button(self.table,
                                 text="Hit",
                                 font=("Arial", 10, "bold"),
@@ -85,6 +88,7 @@ class CGameTable:
                                 state=tk.DISABLED,
                                 bg=abutt_bg_color,
                                 command=lambda: self.hit())
+    # button "stand"
     self.stand_button = tk.Button(self.table,
                                   text="Stand",
                                   font=("Arial", 10, "bold"),
@@ -94,6 +98,7 @@ class CGameTable:
                                   state=tk.DISABLED,
                                   command=lambda: print(self.player1.hand.cards[1].suit,
                                   self.player1.hand.cards[1].rank))
+    # button "double your bet"
     self.double_button = tk.Button(self.table,
                                    text="Double",
                                    font=("Arial", 10, "bold"),
@@ -103,6 +108,7 @@ class CGameTable:
                                    bg=abutt_bg_color,
                                    command=lambda: print(self.dealer.hand.cards[0].suit,
                                    self.dealer.hand.cards[0].rank))
+    # button "split your cards"
     self.split_button = tk.Button(self.table,
                                   text="Split",
                                   font=("Arial", 10, "bold"),
@@ -110,6 +116,7 @@ class CGameTable:
                                   border=2,
                                   state=tk.DISABLED,
                                   bg=abutt_bg_color)
+    # button "use insurance"
     self.insurance_button = tk.Button(self.table,
                                       text="Insurance",
                                       font=("Arial", 10, "bold"),
@@ -118,14 +125,14 @@ class CGameTable:
                                       state=tk.DISABLED,
                                       bg=abutt_bg_color,)
 
-    #vytvoří objekty, které jsou popisky tlačítek
+    #create (object) popup windows with button function label
     CWidgetInfo(self.deal_button, "deal_button_note")
     CWidgetInfo(self.hit_button, "hit_button_note")
     CWidgetInfo(self.stand_button, "stand_button_note")
     CWidgetInfo(self.double_button, "double_button_note")
     CWidgetInfo(self.split_button, "split_button_note")
     CWidgetInfo(self.insurance_button, "insurance_button_note")
-    #umístění herních tlačítek do dolní lišty herního menu
+    #game buttons placing
     self.deal_button.place(
         x=(self.table_width / 7 - self.hit_button.winfo_reqwidth()) / 2,
         y=(self.table_height - self.table_height / 8) +
@@ -156,7 +163,7 @@ class CGameTable:
         y=(self.table_height - self.table_height / 8) +
         (self.table_height / 8 - self.hit_button.winfo_reqheight()) / 2)
 
-    #vytvoření ukazatele zbývajících finančníhc prostředků
+    #create display with info about your budget balance
     self.display_budget = tk.Label(
         self.table,
         text=
@@ -165,27 +172,27 @@ class CGameTable:
         bg=self.bg_color,
         foreground="#dddd00")
     self.display_budget.pack()
-    #přiřazení 'escape' funkce klávese Esc
+    #assign key ESC as 'escape' function
     self.table.bind(
         '<Escape>',
         lambda e, bg_color="#ddddee": CEscWin(bg_color))
 
   #--------------------------------------------------------------------------------
   def deal_cards(self):
-    #rozdání karet hráči
+    #deal cards to player
     self.drawing_deck.move_card(self.player1.hand)
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
-    #rozdání karet dealerovi
+    #deal cards to dealer
     self.drawing_deck.move_card(self.dealer.hand, ay=50)
     self.drawing_deck.table_cleaner(self.dealer.hand)
     self.drawing_deck.move_card(self.dealer.hand, ay=50)
     #self.drawing_deck.place_reverse_side(ax=300,ay=50)
     self.checker()
     #--------------------------------------------------------------------------------
-  #funkce pro změnu stavu tlačítek
+  #function which shut on/off buttons and check win/lose conditions
   def checker(self):
-    #nadefinování a nastavení defaultních hodnot tlačítek po spuštění fce
+    #to define default values for button switcher
     b_deal = 0
     b_hit = 1
     b_stand = 1
@@ -194,14 +201,15 @@ class CGameTable:
     b_insurance = 0
     
     hand = self.player1.hand
+    #auto-lose condition
     if hand.calculate_hand_value(hand)>21:
       print("You have lose!")
       self.button_states(1,0,0,0,0,0)
-      
+    #auto-win condition 
     if len(hand.cards)==2:
       if hand.calculate_hand_value(hand)==21:
         self.button_states(1,0,0,0,0,0)
-        
+    #have player cards the same rank. if yes, it is possible to split this cards
     if len(hand.cards)==2:
       if hand.cards[0].rank == hand.cards[1].rank: 
         b_split = 1
@@ -210,7 +218,7 @@ class CGameTable:
     
     self.button_states(b_deal, b_hit, b_stand, b_double, b_split, b_insurance)
   #--------------------------------------------------------------------------------
-  #funkce k přepínání tlačítek, jestli jsou nebo nejsou aktivní 0 - vypnuto, 1 - zapnuto
+  #function to switch buttons, whether they are active or not 0 - off, 1 - on
   def button_states(self,ab_deal=1,ab_hit=0,ab_stand=0,ab_double=0,ab_split=0,ab_insurance=0):
     if ab_deal==1:self.deal_button.config(state=tk.NORMAL)
     else:self.deal_button.config(state=tk.DISABLED)
@@ -225,14 +233,14 @@ class CGameTable:
     if ab_insurance==1:self.insurance_button.config(state=tk.NORMAL)
     else:self.insurance_button.config(state=tk.DISABLED)   
       #--------------------------------------------------------------------------------
-  #přidání karty hráči
+  #player draw new card
   def hit(self):
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
     self.checker()
     
     #===============================================================================
-#vytvoření okna ukončení hry
+#create widget for geme quiting
 class CEscWin:
   #--------------------------------------------------------------------------------
   def __init__(self, bg_color="#ddddee", abutt_bg_color="#ccccff"):
@@ -249,15 +257,16 @@ class CEscWin:
     self.esc_window.resizable(False, False)
     self.esc_window.protocol("WM_DELETE_WINDOW",
                              lambda: self.esc_window.destroy())
-    #nebudu prováděna žádná akce, dokud nebude vyřešeno tlačítko
+    #it is impossible to make any action before solving this widget
     self.esc_window.grab_set()
-    #popisek 'Escape' okna
+    #label for 'Escape window'
     self.label = tk.Label(self.esc_window,
                           text=dict_en_cz["want_quit"][lang40],
                           bg=bg_color,
                           font=("Arial", 11))
     self.label.place(x=5, y=5)
-    #nadefinování tlačítek 'Escape' okna a jejich umístění v okně
+    #to define 'Escape' buttons and their position
+    #button "quit"
     self.button_quit = tk.Button(self.esc_window,
                                  text=dict_en_cz["quit"][lang40],
                                  bg=abutt_bg_color,
@@ -265,6 +274,7 @@ class CEscWin:
                                  font=("Arial", 10, "bold"),
                                  borderwidth=3,
                                  command=lambda: exit())
+    #button "close"
     self.button_close = tk.Button(self.esc_window,
                                   text=dict_en_cz["close"][lang40],
                                   bg=abutt_bg_color,
@@ -272,38 +282,42 @@ class CEscWin:
                                   font=("Arial", 10, "bold"),
                                   borderwidth=3,
                                   command=lambda: self.esc_window.destroy())
-    #umístění tlačítek close a quit
+    #"close" and "quit" button placement
     self.button_quit.place(x=5, y=30)
     self.button_close.place(x=100, y=30)
 
 #===============================================================================
-#vytvoření popisných oken k tlačítkům
+#class which create info widget to game buttons
 class CWidgetInfo:
   #--------------------------------------------------------------------------------
-  #vytvoří popisný štítek k tlačítkům d následujícími vlastnostmi
+  #create new popup info widget
   def __init__(self, awidget, atext):
     self.widget = awidget
     self.text = atext
     self.tooltip = None
+    #what happends when hover the cursor
     self.widget.bind("<Enter>", self.show_tooltip)
+    #what happends when hover out
     self.widget.bind("<Leave>", self.hide_tooltip)
   #--------------------------------------------------------------------------------
-  #zobrazí popisný štítek k tlačítku
+  #show info widget
   def show_tooltip(self, aevent):
-    #aktualizace jazyka
+    #use right language from config.ini
     config.read("config.ini")
     lang40 = int(config["Settings"]["language"])
 
-    #lokalizace informačního widgetu
+    #returt info widget position (x, y)
     x, y, _, _ = self.widget.bbox("insert")
     x = x + self.widget.winfo_rootx() + 25
     y = y + self.widget.winfo_rooty() + 30
 
     self.tooltip = tk.Toplevel(self.widget)
+    #widget is just simple label without classic window border 
     self.tooltip.wm_overrideredirect(True)
+    #determine info widget position
     self.tooltip.wm_geometry(f"+{x}+{y}")
 
-    #popisek uvnitř informačního widgetu
+    #define text in info widget
     label = tk.Label(self.tooltip,
                      text=dict_en_cz[self.text][lang40],
                      background="#ffffe0",
@@ -311,15 +325,16 @@ class CWidgetInfo:
                      borderwidth=1)
     label.pack(ipadx=1)
   #--------------------------------------------------------------------------------
-  #zrušení okna popisku
+  #info widget disappears
   def hide_tooltip(self, event):
     if self.tooltip:
       self.tooltip.destroy()
 
 
 #===============================================================================
-#vytvoří kartu příslušné barvy, nominální a numerické hodnoty
+#create card instantion
 class Card:
+  # card rank (str) to card value (int) convertor
   card_values = {
       '2': 2,
       '3': 3,
@@ -335,64 +350,70 @@ class Card:
       'King': 10,
       'Ace': 11}
   #--------------------------------------------------------------------------------
+  #create card with suit, rank and nominal value
   def __init__(self, asuit, arank):
     self.suit = asuit
     self.rank = arank
     self.value = self.card_values[arank]
 
 #===============================================================================
-#Vytvoří balíček hracích karet
+#create deck instantion
 class CDeck:
   #--------------------------------------------------------------------------------
+  #create deck from N x 52-card packs 
   def __init__(self, anum_decks=1):
-     #vytvoří slovník jehož klíče jsou jednotlivé 'barev' a hodnoty jsou seznamy hodnot karet
+     #creating a dictionary its keys are individual 'suits' and values ​​are lists of card values
     self.card_photo={suit: [] for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades']}
-    #vytvoří balíčky 52 karet a uloží je do seznamu self.cards
+    #create N x 52-card deck and save it into self.cards
     if anum_decks > 0:
+      #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
           for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in [
               '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
               'King', 'Ace']]
+      # shuffle created deck
       random.shuffle(self.cards)
+    #create empty deck
     else:
       self.cards = []
-    #vytvoří seznam obrázků karet a uloží je do seznamů slovníků self.card_photo
+    #create links to card pictures referring to suit and rank
     for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades']:
       for rank in ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']:
+        # connect card object with image 'rank'.gif in folder 'suit'
         obverse_side_image = Image.open(f"./cards/{suit}/{rank}.gif")
         obverse_side_photo = ImageTk.PhotoImage(obverse_side_image)
         self.card_photo[suit].append(obverse_side_photo)
   #--------------------------------------------------------------------------------
-  # balíček umí umístit kartu z jednoho  do druhého balíčku
+  # move card from one deck to other
   def move_card(self, ato, afrom=None,ay=300):
-    #převede rank dané karty na přesnou pozici obrázku karty v seznamu slovníku self.card_photo
+    #return exact card position in 'rank' list above
     rank_to_list_pos_convertor = {'2':0, '3':1, '4':2, '5':3, '6':4, '7':5, '8':6, '9':7,
                                   '10':8, 'Jack':9, 'Queen':10, 'King':11, 'Ace':12}
     t_width = game.table_width
-
+    #draw card from self.deck if is not changed default value of argument 'afrom'
     card_to_move = afrom.draw_card() if afrom else self.draw_card()
+    # place card into target deck
     ato.cards.append(card_to_move)
+    #if deck is not empty show image of the card on the game table
     if card_to_move is not None:
-
-
-
       for i in range(len(ato.cards)):
         self.label = tk.Label(game.table, image=self.card_photo[ato.cards[i].suit]
                          [rank_to_list_pos_convertor[ato.cards[i].rank]])
-        # zkrácení zápisu pro použití v metodě place
+        # purpose of local variable 'lcs' is code shortening 
         lcs = len(ato.cards)
-        # metoda place umístí obrázky vyložených karet přesně na střed okna
-        # šířka obrázku karty je 104 pxl
+        # method which place card image into the centre of game widget (window)
+        # the width of the cards images is 104 pxl
         self.label.place(x=(t_width-(250*(lcs-1)/(lcs)+104))/2+(250*i)/lcs, y=ay)
 
-      #vytvoří ukazatel součtu hodnoty karet
+      #displays cards values total above player and dealer hand image
       self.value_total = tk.Label(game.table, text=f"{self.calculate_hand_value(ato)}",
                              font=("Arial", 11),
                              fg="#000000",
                              bg=game.bg_color)
       self.value_total.place(x=(t_width)/2-10, y=ay-25)
   #--------------------------------------------------------------------------------
+  #return total value of hand (argument 'ahand')
   def calculate_hand_value(self,ahand):
     total_value = 0
     for card in ahand.cards:
@@ -400,19 +421,19 @@ class CDeck:
     self.hand_value = total_value
     return total_value
   #--------------------------------------------------------------------------------
-  #balíček umí odevzdávat karty k dalšímu použití
+  #removes card from one deck amd return it for later using
   def draw_card(self):
     if len(self.cards) == 0:
       return None
     return self.cards.pop()
   #--------------------------------------------------------------------------------
-  #vyhodí obrázky karet ze stolu
+  #removes old card images from the game table
   def table_cleaner(self,ato):
     for _ in range(len(ato.cards)):
       self.label.place_forget()
   #--------------------------------------------------------------------------------
   """  
-  #nahrání image pro rubovou stranu karty do widgetu
+  #load backend of card
   def place_reverse_side(self, ax=500,ay=300): 
     self.reverse_side_image = Image.open("./cards/red_back.gif")
     self.reverse_side_photo = ImageTk.PhotoImage(self.reverse_side_image)
@@ -421,12 +442,12 @@ class CDeck:
     self.reverse_side.place(x=ax,y=ay)
   """
   #--------------------------------------------------------------------------------
-  #funkce, která zamíchá balíček/seznam
+  #shuffles deck
   def shuffle(self):
     random.shuffle(self.cards)
 
 #===============================================================================
-#třída, která vytvoří hráče
+#class, which creates a new player with a few attributes
 class CPlayer:
   #--------------------------------------------------------------------------------
   def __init__(self):
@@ -436,7 +457,7 @@ class CPlayer:
     self.bet_amount = 1
     
 #===============================================================================
-#inicializuje vytvoření herní desky ,balíčků kret, hráče a dealera
+#initiates main class and crates the game board
 def create_game_window():
   global game
   game=CGameTable()

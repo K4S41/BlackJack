@@ -1,44 +1,45 @@
 from turtle import Turtle, Screen
 from time import sleep
 import main_menu
-#vytvoření podkladového okna
+#create root widget
 intro = Screen()
 intro.setup(width=500, height=300)
 intro.title("Black Jack")
 intro.bgcolor("#ddddee")
-# vypnutí trasování
+# turn on tracing
 intro.tracer(1)
-#vytvoření karet nad nadpisem "BLACK JACK" v rámci intro
+#create intro cards images
 intro.register_shape("./cards/ACi.gif")
 intro.register_shape("./cards/ADi.gif")
 intro.register_shape("./cards/AHi.gif")
 intro.register_shape("./cards/ASi.gif")
-#křížové eso
+#club ace 
 club = Turtle()
+# don´t write tracer line
 club.penup()
 club.shape("./cards/ACi.gif")
 club.goto(-170, 70)
-#kárové eso
+#diamond ace
 diamond = Turtle()
 diamond.penup()
 diamond.shape("./cards/ADi.gif")
 diamond.goto(-60, 70)
-#srdcové eso
+#heart ace
 hearts = Turtle()
 hearts.penup()
 hearts.shape("./cards/AHi.gif")
 hearts.goto(60, 70)
-#pikové eso
+#spade ace
 spades = Turtle()
 spades.penup()
 spades.shape("./cards/ASi.gif")
 spades.goto(170, 70)
-
+#turn off tracer
 intro.tracer(0)
 
-#funkce napíše nápis "BLACK JACK"
+#write title "BLACK JACK"
 def write_intro_title():
-  #černá část
+  #black part
   black = Turtle()
   black.penup()
   black.shape("square")
@@ -46,7 +47,7 @@ def write_intro_title():
   black.goto(-210, -80)
   black.write("BLACK", font=("Arial", 44, "bold"))
   black.hideturtle()
-  #červená část
+  #red part
   jack = Turtle()
   jack.penup()
   jack.shape("square")
@@ -55,7 +56,7 @@ def write_intro_title():
   jack.write("JACK", font=("Arial", 44, "bold"))
   jack.hideturtle()
 
-#podtrhne intro text
+#underline the text
 def underliner():
   global intro
   underline = Turtle("blank")
@@ -64,23 +65,23 @@ def underliner():
   underline.goto(-210, -85)
   underline.pensize(5)
   underline.color("#990000")
-  #zapnutí trasování
+  #turn on tracing
   intro.tracer(1)
-  #černé podtržení
+  #black underlining
   underline.pendown()
   underline.forward(205)
-  #mezera podtržení
+  #underline space
   underline.penup()
   underline.forward(40)
-  #červené podtržení
+  #red underlining
   underline.pendown()
   underline.color("#000000")
   underline.forward(165)
   sleep(1.7)
 
-#spuštění nápisu "BLACK JACK" a jeho podtržení
+#start title creating "BLACK JACK" and underline it
 write_intro_title()
 underliner()
-#ukončení intro a přechod do hlavního menu
+#end intro and go to main menu window
 intro.bye()
 main_menu.create_main_menu(amenu_bg_color="#ddddee")

@@ -1,20 +1,20 @@
 import tkinter as tk
 from sys import exit
 from configparser import ConfigParser
-#importy vlastních modulů
+#import own moduls
 from language import dict_en_cz
 import g_table
-#načtení konfiguračního souboru
+#config file loading
 config = ConfigParser()
 config.read("config.ini")
-#nadefinování defaultních proměnných ze souboru config.ini
+#to define default variables from config.ini
 num_pack10 = int(config["Settings"]["packages"])
 starting_budget20 = int(config["Settings"]["budget"])
 b_strategy30 = bool(config["Settings"]["strategy"])
 lang40 = int(config["Settings"]["language"])
 
 
-#update konfiguračního souboru
+#update config.ini data
 def config_update():
   global num_pack10, starting_budget20, b_strategy30, lang40
   config = ConfigParser()
@@ -25,11 +25,11 @@ def config_update():
   lang40 = int(config["Settings"]["language"])
 
 
-#vytvoření panelu s nabídkou settings
+#create settings menu panel
 def create_settings_menu(amenu_bg_color="#ddddee"):
   global dict_en_cz
 
-  #vytvoření tlačítka pro ukládání nastavení a opuštění nabídky nastavení
+  #create button for set state save and for window leave
   def save_and_close_settings():
     config["Settings"] = {
         "packages": num_pack10_var.get(),
@@ -45,7 +45,7 @@ def create_settings_menu(amenu_bg_color="#ddddee"):
     create_main_menu(amenu_bg_color="#ddddee")
 
   settings_panel = tk.Tk()
-  # vycentrování okna do středu obrazovky
+  # to get widget into screen center
   screen_width = settings_panel.winfo_screenwidth()
   screen_height = settings_panel.winfo_screenheight()
   panel_width = 250
@@ -53,23 +53,23 @@ def create_settings_menu(amenu_bg_color="#ddddee"):
   settings_panel.geometry(
       f"{panel_width}x{panel_height}+{int((screen_width - panel_width) / 2)}+{int((screen_height - panel_height) / 2)}"
   )
-  # konfigurace okna hlavního menu
+  # main menu widget configuration
   settings_panel.title(dict_en_cz["settings"][lang40])
   settings_panel.resizable(False, False)
   settings_panel.configure(background=amenu_bg_color)
   settings_panel.protocol("WM_DELETE_WINDOW", lambda: settings_panel.destroy())
-  # definice proměnných použitých pro konfiguraci tlačítek a popisků (barva pozadí a font písma)
+  # definition of variables used to configure buttons and labels (background color and font)
   bgcolor = amenu_bg_color
   label_font = ("Arial", 10, "bold")
   button_font = ("Arial", 10)
 
-  # definice proměnných a pro sledování stavu číselných hodnot a zaškrtávacícho polí a nastavení jednorázové výchozí hodnoty
+  # defining variables and for monitoring the state of numeric values ​​and checkboxes and setting a one-time default value
   num_pack10_var = tk.IntVar(value=num_pack10)
   starting_budget20_var = tk.IntVar(value=starting_budget20)
   b_strategy30_var = tk.IntVar(value=b_strategy30)
   lang40_var = tk.IntVar(value=lang40)
 
-  # nastavení počtu balíků, pro samotnou hru
+  # choose number of packages mixed into drawing deck (4 options)
   label10 = tk.Label(settings_panel,
                      text=(dict_en_cz["number_of_packages"][lang40]),
                      font=label_font,
@@ -102,14 +102,14 @@ def create_settings_menu(amenu_bg_color="#ddddee"):
                             bg=amenu_bg_color,
                             value=8,
                             command=lambda: num_pack10_var.get())
-  #umístění nápisu a výběru tlačítek 10 - 14 do panelu nastavení
+  #label and buttons placing
   label10.grid(row=2, column=2, columnspan=8, sticky="w", pady=5, padx=10)
   option11.grid(row=4, column=2, sticky="w")
   option12.grid(row=4, column=4, sticky="w")
   option13.grid(row=4, column=6, sticky="w")
   option14.grid(row=4, column=8, sticky="w")
 
-  # nastavení počátečního rozpočtu v dolarech
+  # starting budget setting (4 options)
   label20 = tk.Label(settings_panel,
                      text=dict_en_cz["budget"][lang40],
                      font=label_font,
@@ -142,14 +142,14 @@ def create_settings_menu(amenu_bg_color="#ddddee"):
                             bg=amenu_bg_color,
                             value=20,
                             command=lambda: starting_budget20_var.get())
-  #umístění nápisu a výběru tlačítek 20 - 24 do panelu nastavení
+  #label and buttons placing
   label20.grid(row=6, column=2, columnspan=8, sticky="w", pady=5, padx=10)
   option21.grid(row=8, column=2, sticky="w")
   option22.grid(row=8, column=4, sticky="w")
   option23.grid(row=8, column=6, sticky="w")
   option24.grid(row=8, column=8, sticky="w")
 
-  # povolení panelu se základní strategií
+  # basic strategy panel turn on/off
   label30 = tk.Label(settings_panel,
                      text=dict_en_cz["strategy"][lang40],
                      font=label_font,
@@ -160,15 +160,16 @@ def create_settings_menu(amenu_bg_color="#ddddee"):
                               bg=amenu_bg_color,
                               variable=b_strategy30_var,
                               command=lambda: b_strategy30_var.get())
-  #umístění nápisu a zaškrtávacího okna 30,31 do panelu nastavení
+  #checkbox placing
   label30.grid(row=10, column=2, columnspan=8, sticky="w", pady=5, padx=10)
   checkbox31.grid(row=12, column=2, columnspan=8, sticky="w")
 
-  #nastavení jazyku hry
+  #program language switch
   label40 = tk.Label(settings_panel,
                      text=dict_en_cz["language"][lang40],
                      font=label_font,
                      bg=bgcolor)
+  #choose English
   option41 = tk.Radiobutton(settings_panel,
                             text="EN",
                             font=button_font,
@@ -176,6 +177,7 @@ def create_settings_menu(amenu_bg_color="#ddddee"):
                             value=0,
                             variable=lang40_var,
                             command=lambda: lang40_var.get())
+  #choose Czech
   option42 = tk.Radiobutton(settings_panel,
                             text="CZ",
                             font=button_font,
@@ -183,23 +185,23 @@ def create_settings_menu(amenu_bg_color="#ddddee"):
                             value=1,
                             variable=lang40_var,
                             command=lambda: lang40_var.get())
-  #umístění nápisu a zaškrtávacího okna 40,41 do panelu nastavení
+  #label and buttons placing
   label40.grid(row=14, column=2, columnspan=8, sticky="w", pady=5, padx=10)
   option41.grid(row=16, column=2, sticky="w")
   option42.grid(row=16, column=4, sticky="w")
 
-  #tlačítko pro návrat do hlavní nabídky
+  #save and back to the main menu button
   button50 = tk.Button(settings_panel,
                        text=dict_en_cz["save_and_back"][lang40],
                        font=label_font,
                        bg="#ccccff",
                        command=lambda: save_and_close_settings())
-  #umístění tlačítka 50 do panelu nastavení
+  #button placing
   button50.grid(row=18, column=2, columnspan=8, sticky="w", pady=30, padx=10)
   settings_panel.mainloop()
 
 
-#zde jsou ve vyskakovacím okně popsány kontaktní údaje na autora
+#show information about program author
 def show_the_author():
   global language
   panel = tk.Toplevel()
@@ -207,40 +209,40 @@ def show_the_author():
   panel_height = 110
   label_font = ("Arial", 10, "bold")
   bgcolor = "#ddddee"
-  #vycentrování okna do středu obrazovky
+  # to get widget into screen center
   screen_width = panel.winfo_screenwidth()
   screen_height = panel.winfo_screenheight()
   panel.geometry(
       f"{panel_width}x{panel_height}+{int((screen_width-panel_width)/2)}+{int((screen_height-panel_height)/2)}"
   )
-  #nastavení parametrů okna author
+  #author widget configuration
   panel.configure(bg=bgcolor)
   panel.title(dict_en_cz["author"][lang40])
-  #panel.iconbitmap("./cards/AS.ico")
+  #panel.iconbitmap("./cards/AS.ico") - doesn´t run
   panel.resizable(False, False)
   panel.protocol("WM_DELETE_WINDOW", lambda: panel.destroy())
   panel.grab_set()
 
-  #list kontaktních údajů
+  #author widget contact data
   author_info_list = [[dict_en_cz["created_by"][lang40], "Petr Kašička"],
                       ["Mail: ", "K4S4@email.cz"],
                       ["LinkedIn: ", "www.linkedin.com/in/p-kasicka"]]
   ilist = author_info_list
-  #nastavení a nagridování jednotlivých údajů z listu výše
+  #label creating
   label00 = tk.Label(panel, text=ilist[0][0], font=label_font, bg=bgcolor)
   label01 = tk.Label(panel, text=ilist[0][1], font=label_font, bg=bgcolor)
   label10 = tk.Label(panel, text=ilist[1][0], font=label_font, bg=bgcolor)
   label11 = tk.Label(panel, text=ilist[1][1], font=label_font, bg=bgcolor)
   label20 = tk.Label(panel, text=ilist[2][0], font=label_font, bg=bgcolor)
   label21 = tk.Label(panel, text=ilist[2][1], font=label_font, bg=bgcolor)
-  #umístěbá popisků do slouce a řádku se zarovnáním nalevo - "w" = "west"
+  #label placing - "w" = "west"
   label00.grid(row=2, column=2, sticky="w")
   label01.grid(row=2, column=4, sticky="w")
   label10.grid(row=4, column=2, sticky="w")
   label11.grid(row=4, column=4, sticky="w")
   label20.grid(row=6, column=2, sticky="w")
   label21.grid(row=6, column=4, sticky="w")
-  #tlačítko na vyskočení z okna
+  #create close button 
   exit_button = tk.Button(panel,
                           text=dict_en_cz["close"][lang40],
                           width=11,
@@ -251,22 +253,21 @@ def show_the_author():
   exit_button.place(x=120, y=70)
 
 
-#vytvoří panel hlavního menu
+#create main menu widget
 def create_main_menu(atitle="Menu", amenu_bg_color="#ddddee"):
   global language
 
-  # funkce zajišťující přepínání mezi panleme hlavním a panelem settings
+  # router function - will choose which window will be started
   def panel_switch(anew_window):
     main_panel.destroy()
     if anew_window == "ng":
-      #funkce, která nechá vytvořit herní okno, balíček karet, hráče, uživatelské rozhraní
+      #function that lets you create a game window, deck of cards, players, user interface
       g_table.create_game_window()
-      #table = CGameTable()
     elif anew_window == "settings":
       create_settings_menu()
 
   main_panel = tk.Tk()
-  #vycentrování okna do středu obrazovky
+  # to get widget into screen center
   screen_width = main_panel.winfo_screenwidth()
   screen_height = main_panel.winfo_screenheight()
   panel_width = 250
@@ -274,13 +275,14 @@ def create_main_menu(atitle="Menu", amenu_bg_color="#ddddee"):
   main_panel.geometry(
       f"{panel_width}x{panel_height}+{int((screen_width-panel_width)/2)}+{int((screen_height-panel_height)/2)}"
   )
-  #konfigurace okna hlavního menu
+  #main menu window configuration
   main_panel.title(atitle)
-  #main_panel.iconbitmap("./cards/AS.ico")
+  #main_panel.iconbitmap("./cards/AS.ico") - doesn´t work
   main_panel.resizable(False, False)
   main_panel.configure(background=amenu_bg_color)
   main_panel.protocol("WM_DELETE_WINDOW", lambda: main_panel.destroy())
-  #vytvoří tlačítka hlavního menu
+  # create main menu buttons
+  # "new game" button
   button1 = tk.Button(main_panel,
                       bg="#ccccff",
                       text=dict_en_cz["new_game"][lang40],
@@ -289,6 +291,7 @@ def create_main_menu(atitle="Menu", amenu_bg_color="#ddddee"):
                       font=("Arial", 10, "bold"),
                       border=3,
                       command=lambda: panel_switch("ng"))
+  # "setting" button
   button2 = tk.Button(main_panel,
                       bg="#ccccff",
                       text=dict_en_cz["settings"][lang40],
@@ -297,6 +300,7 @@ def create_main_menu(atitle="Menu", amenu_bg_color="#ddddee"):
                       font=("Arial", 10, "bold"),
                       border=3,
                       command=lambda: panel_switch("settings"))
+  # "show info about author" button
   button3 = tk.Button(main_panel,
                       bg="#ccccff",
                       text=dict_en_cz["author"][lang40],
@@ -305,6 +309,7 @@ def create_main_menu(atitle="Menu", amenu_bg_color="#ddddee"):
                       font=("Arial", 10, "bold"),
                       border=3,
                       command=lambda: show_the_author())
+  # "shut down the program" button
   button4 = tk.Button(main_panel,
                       bg="#ccccff",
                       text=dict_en_cz["quit"][lang40],
@@ -313,7 +318,7 @@ def create_main_menu(atitle="Menu", amenu_bg_color="#ddddee"):
                       font=("Arial", 10, "bold"),
                       border=3,
                       command=lambda: exit())
-  #umístí tlačítka hlavního menu do sloupců a řádků
+  # buttons placing
   button1.place(x=75, y=30)
   button2.place(x=75, y=80)
   button3.place(x=75, y=130)
