@@ -47,9 +47,6 @@ class CGameTable:
     #create drawing deck
     self.drawing_deck = CDeck(anum_decks=num_pack10)
 
-    #shuffle drawwind deck
-    self.drawing_deck.shuffle()
-
     #create discard deck
     self.discard_deck = CDeck(anum_decks=0)
 
@@ -179,14 +176,12 @@ class CGameTable:
 
   #--------------------------------------------------------------------------------
   def deal_cards(self):
+    #deal cards to dealer
+    self.drawing_deck.move_card(self.dealer.hand, ay=50)
     #deal cards to player
     self.drawing_deck.move_card(self.player1.hand)
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
-    #deal cards to dealer
-    self.drawing_deck.move_card(self.dealer.hand, ay=50)
-    self.drawing_deck.table_cleaner(self.dealer.hand)
-    self.drawing_deck.move_card(self.dealer.hand, ay=50)
     #self.drawing_deck.place_reverse_side(ax=300,ay=50)
     self.checker()
     #--------------------------------------------------------------------------------
@@ -232,12 +227,17 @@ class CGameTable:
     else:self.split_button.config(state=tk.DISABLED)
     if ab_insurance==1:self.insurance_button.config(state=tk.NORMAL)
     else:self.insurance_button.config(state=tk.DISABLED)   
-      #--------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------
   #player draw new card
   def hit(self):
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
     self.checker()
+  
+  #--------------------------------------------------------------------------------
+  def split(self):
+    pass
+
     
     #===============================================================================
 #create widget for geme quiting
@@ -249,12 +249,13 @@ class CEscWin:
     self.esc_window.title(dict_en_cz["quit"][lang40])
     screen_width = self.esc_window.winfo_screenwidth()
     screen_height = self.esc_window.winfo_screenheight()
-    self.esc_window_width = 200
-    self.esc_window_height = 80
+    self.esc_window_width = 250
+    self.esc_window_height = 100
     self.esc_window.geometry(
         f"{self.esc_window_width}x{self.esc_window_height}+{int((screen_width-self.esc_window_width)/2)}+{int((screen_height-self.esc_window_height)/2)}"
     )
     self.esc_window.resizable(False, False)
+    
     self.esc_window.protocol("WM_DELETE_WINDOW",
                              lambda: self.esc_window.destroy())
     #it is impossible to make any action before solving this widget
@@ -263,8 +264,8 @@ class CEscWin:
     self.label = tk.Label(self.esc_window,
                           text=dict_en_cz["want_quit"][lang40],
                           bg=bg_color,
-                          font=("Arial", 11))
-    self.label.place(x=5, y=5)
+                          font=("Arial", 12, "bold"))
+    self.label.place(x=40, y=10)
     #to define 'Escape' buttons and their position
     #button "quit"
     self.button_quit = tk.Button(self.esc_window,
@@ -283,8 +284,8 @@ class CEscWin:
                                   borderwidth=3,
                                   command=lambda: self.esc_window.destroy())
     #"close" and "quit" button placement
-    self.button_quit.place(x=5, y=30)
-    self.button_close.place(x=100, y=30)
+    self.button_quit.place(x=40, y=50)
+    self.button_close.place(x=160, y=50)
 
 #===============================================================================
 #class which create info widget to game buttons
@@ -386,32 +387,37 @@ class CDeck:
         self.card_photo[suit].append(obverse_side_photo)
   #--------------------------------------------------------------------------------
   # move card from one deck to other
-  def move_card(self, ato, afrom=None,ay=300):
-    #return exact card position in 'rank' list above
-    rank_to_list_pos_convertor = {'2':0, '3':1, '4':2, '5':3, '6':4, '7':5, '8':6, '9':7,
-                                  '10':8, 'Jack':9, 'Queen':10, 'King':11, 'Ace':12}
-    t_width = game.table_width
+  def move_card(self, ato, afrom=None, ay=300,ashow_card=True):
+    
     #draw card from self.deck if is not changed default value of argument 'afrom'
     card_to_move = afrom.draw_card() if afrom else self.draw_card()
     # place card into target deck
     ato.cards.append(card_to_move)
-    #if deck is not empty show image of the card on the game table
-    if card_to_move is not None:
-      for i in range(len(ato.cards)):
-        self.label = tk.Label(game.table, image=self.card_photo[ato.cards[i].suit]
-                         [rank_to_list_pos_convertor[ato.cards[i].rank]])
-        # purpose of local variable 'lcs' is code shortening 
-        lcs = len(ato.cards)
-        # method which place card image into the centre of game widget (window)
-        # the width of the cards images is 104 pxl
-        self.label.place(x=(t_width-(250*(lcs-1)/(lcs)+104))/2+(250*i)/lcs, y=ay)
+    #condition, if it is shown card
+    if ashow_card==True and card_to_move is not None:
+      self.show_card(ato,ay)
+  # shows card image ot the table
+  def show_card(self,ato,ay):
+    #return exact card position in 'rank' list above
+    rank_to_list_pos_convertor = {'2':0, '3':1, '4':2, '5':3, '6':4, '7':5, '8':6, '9':7,
+                                  '10':8, 'Jack':9, 'Queen':10, 'King':11, 'Ace':12}
+    t_width = game.table_width
+    for i in range(len(ato.cards)):
+      self.label = tk.Label(game.table, image=self.card_photo[ato.cards[i].suit]
+                      [rank_to_list_pos_convertor[ato.cards[i].rank]])
+      # purpose of local variable 'lcs' is code shortening 
+      lcs = len(ato.cards)
+      # method which place card image into the centre of game widget (window)
+      # the width of the cards images is 104 pxl
+      self.label.place(x=(t_width-(250*(lcs-1)/(lcs)+104))/2+(250*i)/lcs, y=ay)
 
-      #displays cards values total above player and dealer hand image
-      self.value_total = tk.Label(game.table, text=f"{self.calculate_hand_value(ato)}",
-                             font=("Arial", 11),
-                             fg="#000000",
-                             bg=game.bg_color)
-      self.value_total.place(x=(t_width)/2-10, y=ay-25)
+    #displays cards values total above player and dealer hand image
+    self.value_total = tk.Label(game.table, text=f"{self.calculate_hand_value(ato)}",
+                          font=("Arial", 11),
+                          fg="#000000",
+                          bg=game.bg_color)
+    self.value_total.place(x=(t_width)/2-10, y=ay-25)
+      
   #--------------------------------------------------------------------------------
   #return total value of hand (argument 'ahand')
   def calculate_hand_value(self,ahand):
@@ -441,10 +447,6 @@ class CDeck:
     #umístění obrázku rubová strany karty
     self.reverse_side.place(x=ax,y=ay)
   """
-  #--------------------------------------------------------------------------------
-  #shuffles deck
-  def shuffle(self):
-    random.shuffle(self.cards)
 
 #===============================================================================
 #class, which creates a new player with a few attributes
