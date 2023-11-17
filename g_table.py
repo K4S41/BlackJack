@@ -182,18 +182,11 @@ class CGameTable:
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
     #self.drawing_deck.place_reverse_side(ax=300,ay=50)
-    self.checker("deal")
+    self.button_switcher()
     #--------------------------------------------------------------------------------
   #function which shut on/off buttons and check win/lose conditions
-  def checker(self,amatch):
-    if amatch == "deal": pass
-    elif amatch == "hit": pass
-    elif amatch == "stand": pass
-    elif amatch == "double": pass
-    elif amatch == "split": pass
-    elif amatch == "insurance": pass
-    else: pass
-
+  def button_switcher(self,abutton=None):
+    hand = self.player1.hand
     #to define default values for button switcher
     self.b_deal = 0
     self.b_hit = 1
@@ -201,19 +194,8 @@ class CGameTable:
     self.b_double = 0
     self.b_split = 0
     self.b_insurance = 0
-    
-    hand = self.player1.hand
-    #auto-lose condition
-    if hand.calculate_hand_value(hand)>21:
-      print("You have lose!")
-      self.button_states(1,0,0,0,0,0)
-    #auto-win condition 
-    if len(hand.cards)==2:
-      if hand.calculate_hand_value(hand)==21:
-        self.button_states(1,0,0,0,0,0)
-    #double button activation, if condition is fulfilled
-    if len(hand.cards)==2:
-        self.b_double = 1
+    #auto win/lose check
+    self.win_lose_check()
 
     #have player cards the same rank. if yes, it is possible to split this cards
     if len(hand.cards)==2:
@@ -221,8 +203,14 @@ class CGameTable:
         self.b_split = 1
       else: 
         self.b_split = 0
+       #double button activation, if condition is fulfilled
+    if len(hand.cards)==2:
+        self.b_double = 1
+    if abutton == "double":
+      self.button_states(1,0,0,0,0,0)
+    else:
+      self.button_states(self.b_deal, self.b_hit, self.b_stand,self.b_double, self.b_split, self.b_insurance)
     
-    self.button_states(self.b_deal, self.b_hit, self.b_stand,self.b_double, self.b_split, self.b_insurance)
   #--------------------------------------------------------------------------------
   #function to switch buttons, whether they are active or not 0 - off, 1 - on
   def button_states(self,ab_deal=1,ab_hit=0,ab_stand=0,ab_double=0,ab_split=0,ab_insurance=0):
@@ -239,22 +227,34 @@ class CGameTable:
     if ab_insurance==1:self.insurance_button.config(state=tk.NORMAL)
     else:self.insurance_button.config(state=tk.DISABLED)   
   #--------------------------------------------------------------------------------
+  #this function will check if game state is not: immediatly lose or win 
+  def win_lose_check(self):
+    hand = self.player1.hand
+    #auto-lose condition
+    if hand.calculate_hand_value(hand)>21:
+      print("You have lose!")
+      self.button_states(1,0,0,0,0,0)
+    #auto-win condition 
+    if hand.calculate_hand_value(hand)==21:
+      print("You have win!")
+      self.button_states(1,0,0,0,0,0)
+  #--------------------------------------------------------------------------------
   #player draw new card
   def hit(self):
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
-    self.checker("hit")
+    self.button_switcher()
   
   #--------------------------------------------------------------------------------
   def double_down(self):
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
-    self.checker("double")
-
+    self.button_switcher("double")
+  #--------------------------------------------------------------------------------
   def split(self):
     pass
   
-    #===============================================================================
+#===============================================================================
 #create widget for geme quiting
 class CEscWin:
   #--------------------------------------------------------------------------------
