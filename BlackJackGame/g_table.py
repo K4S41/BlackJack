@@ -187,8 +187,8 @@ class CGameTable:
     self.button_switcher()
     #--------------------------------------------------------------------------------
   #function which shut on/off buttons and check win/lose conditions
-  def button_switcher(self,abutton=None):
-    hand = self.player1.hand
+  def button_switcher(self,abutton=None,ahand=self.player1.hand):
+    hand = ahand
     #to define default values for button switcher
     self.b_deal = 0
     self.b_hit = 1
@@ -209,6 +209,8 @@ class CGameTable:
     if len(hand.cards)==2:
         self.b_double = 1
     if abutton == "double":
+      self.button_states(1,0,0,0,0,0)
+    if abutton == "split":
       self.button_states(1,0,0,0,0,0)
     else:
       self.button_states(self.b_deal, self.b_hit, self.b_stand,self.b_double, self.b_split, self.b_insurance)
@@ -243,17 +245,17 @@ class CGameTable:
   #--------------------------------------------------------------------------------
   #player draw new card
   def hit(self):
-    self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
     self.button_switcher()
   
   #--------------------------------------------------------------------------------
+  # take just one more card and double your bet
   def double_down(self):
-    self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
     self.button_switcher("double")
 
   #--------------------------------------------------------------------------------
+  # devide player hand into the two new decks
   def split(self):
     self.player2=CPlayer()
     #hide card images after split
@@ -261,6 +263,17 @@ class CGameTable:
     self.split_cover.place(x=280,y=280)
     self.player1.hand.move_card(self.player2.hand)
     self.player1.hand.move_card(self.player1.hand)
+    #player1 dealing a second card
+    self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.split_cover.place(x=80,y=280)
+    self.drawing_deck.move_card(self.player1.hand)
+    #player2 dealing a second (to second hand of player1)
+    self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.split_cover.place(x=480,y=280)
+    self.drawing_deck.move_card(self.player2.hand)
+
+    self.button_switcher()
+    
 
   
 #===============================================================================
