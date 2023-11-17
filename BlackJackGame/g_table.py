@@ -37,12 +37,11 @@ class CGameTable:
     #get game window into screen center
     self.table.geometry(
         f"{self.table_width}x{self.table_height}+{int((screen_width - self.table_width)/2)}+{int((screen_height - self.table_height)/2)}")
-
-    #create player 1
-    self.player1=CPlayer()
-
     #create dealer
     self.dealer = CPlayer()
+    
+    #create player 1
+    self.player1=CPlayer()
 
     #create drawing deck
     self.drawing_deck = CDeck(anum_decks=num_pack10)
@@ -93,8 +92,10 @@ class CGameTable:
                                   border=2,
                                   bg=abutt_bg_color,
                                   state=tk.DISABLED,
-                                  command=lambda: print(self.player1.hand.cards[1].suit,
-                                  self.player1.hand.cards[1].rank))
+                                  command= lambda: print(
+                                    self.dealer.player_id,
+                                    self.player1.player_id,
+                                    self.player2.player_id))
     # button "double your bet"
     self.double_button = tk.Button(self.table,
                                    text="Double",
@@ -255,12 +256,11 @@ class CGameTable:
   #--------------------------------------------------------------------------------
   def split(self):
     self.player2=CPlayer()
-    self.split_cover=tk.Canvas(self.table,width=240,height=170,bg="#228822",bd=0,highlightthickness=0)
-    
-    self.split_cover.place(x=280,y=299)
-
+    #hide card images after split
+    self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.split_cover.place(x=280,y=280)
     self.player1.hand.move_card(self.player2.hand)
-    #self.player1.hand.move_card(self.player1.hand)
+    self.player1.hand.move_card(self.player1.hand)
 
   
 #===============================================================================
@@ -387,7 +387,7 @@ class CDeck:
   #--------------------------------------------------------------------------------
   #create deck from N x 52-card packs 
   def __init__(self, anum_decks=1):
-     #creating a dictionary its keys are individual 'suits' and values ​​are lists of card values
+    #creating a dictionary its keys are individual 'suits' and values ​​are lists of card values
     self.card_photo={suit: [] for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades']}
     #create N x 52-card deck and save it into self.cards
     if anum_decks > 0:
@@ -419,28 +419,53 @@ class CDeck:
     #condition, if it is shown card
     if ashow_card==True and card_to_move is not None:
       self.show_card(ato,ay)
-  # shows card image ot the table
+  #--------------------------------------------------------------------------------    
+  # shows card image on the table
   def show_card(self,ato,ay):
+    
     #return exact card position in 'rank' list above
     rank_to_list_pos_convertor = {'2':0, '3':1, '4':2, '5':3, '6':4, '7':5, '8':6, '9':7,
                                   '10':8, 'Jack':9, 'Queen':10, 'King':11, 'Ace':12}
-    t_width = game.table_width
-    for i in range(len(ato.cards)):
-      self.label = tk.Label(game.table, image=self.card_photo[ato.cards[i].suit]
-                      [rank_to_list_pos_convertor[ato.cards[i].rank]])
-      # purpose of local variable 'lcs' is code shortening 
-      lcs = len(ato.cards)
-      # method which place card image into the centre of game widget (window)
-      # the width of the cards images is 104 pxl
-      self.label.place(x=(t_width-(250*(lcs-1)/(lcs)+104))/2+(250*i)/lcs, y=ay)
+    
+    #returns card image position multiplier in case of split in this function
 
-    #displays cards values total above player and dealer hand image
-    self.value_total = tk.Label(game.table, text=f"{self.calculate_hand_value(ato)}",
-                          font=("Arial", 11),
-                          fg="#000000",
-                          bg=game.bg_color)
-    self.value_total.place(x=(t_width)/2-10, y=ay-25)
-      
+
+    t_width = game.table_width
+    # purpose of local variable 'lcs' is code shortening 
+    lcs = len(ato.cards)
+    # check if object player2 does exist and choose way of images showing
+    if hasattr(game, 'player2'):
+      id_num=0
+      if ato == game.player1.hand:id_num = 1
+      elif ato == game.player2.hand:id_num = -1
+      else: id_num = 0
+      for i in range(len(ato.cards)):
+        self.label = tk.Label(game.table, image=self.card_photo[ato.cards[i].suit]
+                        [rank_to_list_pos_convertor[ato.cards[i].rank]])
+        # method which place card image into the centre of game widget (window)
+        # the width of the cards images is 104 pxl
+        self.label.place(x=((t_width)-(250*(lcs-1)/(lcs)+104))/2+(250*i/lcs)-(t_width/4*id_num), y=ay)
+      #displays cards values total above player and dealer hand image
+      self.value_total = tk.Label(game.table, text=f"{self.calculate_hand_value(ato)}",
+                            font=("Arial", 11),
+                            fg="#000000",
+                            bg=game.bg_color)
+      self.value_total.place(x=((t_width)/2-10)-t_width/4*id_num, y=ay-25)    
+    else:
+      for i in range(len(ato.cards)):
+        self.label = tk.Label(game.table, image=self.card_photo[ato.cards[i].suit]
+                        [rank_to_list_pos_convertor[ato.cards[i].rank]])       
+        # method which place card image into the centre of game widget (window)
+        # the width of the cards images is 104 pxl
+        self.label.place(x=(t_width-(250*(lcs-1)/(lcs)+104))/2+(250*i)/lcs, y=ay)
+
+      #displays cards values total above player and dealer hand image
+      self.value_total = tk.Label(game.table, text=f"{self.calculate_hand_value(ato)}",
+                            font=("Arial", 11),
+                            fg="#000000",
+                            bg=game.bg_color)
+      self.value_total.place(x=(t_width)/2-10, y=ay-25)
+    
   #--------------------------------------------------------------------------------
   #return total value of hand (argument 'ahand')
   def calculate_hand_value(self,ahand):
