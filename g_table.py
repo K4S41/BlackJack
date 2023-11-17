@@ -111,7 +111,8 @@ class CGameTable:
                                   width=8,
                                   border=2,
                                   state=tk.DISABLED,
-                                  bg=abutt_bg_color)
+                                  bg=abutt_bg_color,
+                                  command=lambda: self.split())
     # button "use insurance"
     self.insurance_button = tk.Button(self.table,
                                       text="Insurance",
@@ -250,9 +251,17 @@ class CGameTable:
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
     self.button_switcher("double")
+
   #--------------------------------------------------------------------------------
   def split(self):
-    pass
+    self.player2=CPlayer()
+    self.split_cover=tk.Canvas(self.table,width=240,height=170,bg="#228822",bd=0,highlightthickness=0)
+    
+    self.split_cover.place(x=280,y=299)
+
+    self.player1.hand.move_card(self.player2.hand)
+    #self.player1.hand.move_card(self.player1.hand)
+
   
 #===============================================================================
 #create widget for geme quiting
@@ -386,8 +395,8 @@ class CDeck:
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
           for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in [
-              '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
-              'King', 'Ace']]
+              '2']]
+      #, '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
     #create empty deck
@@ -469,7 +478,6 @@ class CPlayer:
   def __init__(self):
     self.budget = starting_budget20
     self.hand = CDeck(anum_decks=0)
-    self.split_hand = CDeck(anum_decks=0)
     self.bet_amount = 1
     
 #===============================================================================
