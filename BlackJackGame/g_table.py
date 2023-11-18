@@ -53,13 +53,16 @@ class CGameTable:
     #create discard deck
     self.discard_deck = CDeck(anum_decks=0)
 
+    #returns the active player's hand
+    self.activ = self.player1.hand
+
     #create game menu panel
 
     self.table_game_menu = tk.Canvas(self.table,
                                      width=self.table_width,
                                      height=self.table_height / 8,
                                      bg="#ddddff")
-    # bottom menu border 
+    #bottom menu border 
     self.table_game_menu.create_line(0,
                                      2,
                                      self.table_width,
@@ -70,7 +73,7 @@ class CGameTable:
                                y=self.table_height - self.table_height / 8)
 
     #create game buttons
-    # button "deal cards"
+    #button "deal cards"
     self.deal_button = tk.Button(self.table,
                                  text="Deal",
                                  font=("Arial", 10, "bold"),
@@ -178,61 +181,6 @@ class CGameTable:
     self.table.bind(
         '<Escape>',
         lambda e, bg_color="#ddddee": CEscWin(bg_color))
-
-  #--------------------------------------------------------------------------------
-  def deal_cards(self):
-    #deal cards to dealer
-    self.drawing_deck.move_card(self.dealer.hand, ay=50)
-    #deal cards to player
-    self.drawing_deck.move_card(self.player1.hand)
-    self.drawing_deck.table_cleaner(self.player1.hand)
-    self.drawing_deck.move_card(self.player1.hand)
-    #self.drawing_deck.place_reverse_side(ax=300,ay=50)
-    self.win_lose_check("deal")
-    
-  #--------------------------------------------------------------------------------
-  #this function will check if game state is not: immediatly lose or win 
-  def win_lose_check(self,abutton=None):
-    if True:
-      hand = self.player1.hand
-    else:
-      hand = self.player2.hand
-    #auto-lose condition
-    if hand.calculate_hand_value(hand)>21:
-      print("You have lose!")
-    #auto-win condition 
-    if hand.calculate_hand_value(hand)==21:
-      print("You have win!")
-
-    self.button_switcher(abutton)
-#--------------------------------------------------------------------------------
-  #function which shut on/off buttons and check win/lose conditions
-  def button_switcher(self,abutton=None):
-    hand = self.player1.hand
-    #to define default values for button switcher
-    self.b_deal = 0
-    self.b_hit = 0
-    self.b_stand = 0
-    self.b_double = 0
-    self.b_split = 0
-    self.b_insurance = 0
-
-    #have player cards the same rank. if yes, it is possible to split this cards
-    if len(hand.cards)==2:
-      if hand.cards[0].rank == hand.cards[1].rank: 
-        self.b_split = 1
-      else: 
-        self.b_split = 0
-       #double button activation, if condition is fulfilled
-    if len(hand.cards)==2:
-        self.b_double = 1
-    if abutton == "double":
-      self.button_states(1,0,0,0,0,0)
-    if abutton == "split":
-      self.button_states(1,0,0,0,0,0)
-    else:
-      self.button_states(self.b_deal, self.b_hit, self.b_stand,self.b_double, self.b_split, self.b_insurance)
-    
   #--------------------------------------------------------------------------------
   #function to switch buttons, whether they are active or not 0 - off, 1 - on
   def button_states(self,ab_deal=1,ab_hit=0,ab_stand=0,ab_double=0,ab_split=0,ab_insurance=0):
@@ -247,19 +195,58 @@ class CGameTable:
     if ab_split==1:self.split_button.config(state=tk.NORMAL)
     else:self.split_button.config(state=tk.DISABLED)
     if ab_insurance==1:self.insurance_button.config(state=tk.NORMAL)
-    else:self.insurance_button.config(state=tk.DISABLED)   
+    else:self.insurance_button.config(state=tk.DISABLED)
+
+  #--------------------------------------------------------------------------------
+  def deal_cards(self):
+    #define variables for button_states arguments
+    self.b_split = 0
+    self.b_double = 0
+    self.b_insurance = 0 
+    #deal cards to dealer
+    self.drawing_deck.move_card(self.dealer.hand, ay=50)
+    #deal cards to player
+    self.drawing_deck.move_card(self.player1.hand)
+    self.drawing_deck.table_cleaner(self.player1.hand)
+    self.drawing_deck.move_card(self.player1.hand)
+    #determines whether the player won immediately
+    if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
+      print("You have win!")
+    #have player cards the same rank. if yes, it is possible to split this cards
+    if self.player1.hand.cards[0].rank == self.player1.hand.cards[1].rank: 
+      self.b_split = 1
+    # if the sum of the cards dealt is 9, 10 or 11, it is possible to double down
+    if 8<(self.player1.hand.cards[0].value + self.player1.hand.cards[1].value)<12:
+      self.b_double = 1
+    # button state setup - only split could change value
+    if self.dealer.hand.cards[0].rank == "ace":
+      self.b_insurance = 1
+    self.button_states(0, 1, 1, self.b_double, self.b_split, self.b_insurance)
+
+  #--------------------------------------------------------------------------------
+  #this function will check if game state is not: immediatly lose or win 
+  def lose_check(self):
+    
+    #auto-lose condition
+    if self.activ.calculate_hand_value(self.activ)>21:
+      print("Player1 have lose!")
+       
     
   #--------------------------------------------------------------------------------
   #player draw new card
   def hit(self):
-    self.drawing_deck.move_card(self.player1.hand)
-    self.win_lose_check("hit")
+    self.drawing_deck.move_card(self.activ)
+
+    self.lose_check()
+
   
   #--------------------------------------------------------------------------------
   # take just one more card and double your bet
   def double_down(self):
-    self.drawing_deck.move_card(self.player1.hand)
-    self.win_lose_check("double")
+    self.drawing_deck.move_card(self.activ)
+
+    self.lose_check()
+
 
   #--------------------------------------------------------------------------------
   # devide player hand into the two new decks
@@ -278,10 +265,8 @@ class CGameTable:
     self.split_cover.place(x=480,y=280)
     self.drawing_deck.move_card(self.player2.hand)
 
-    self.win_lose_check("split")
-    
+    self.lose_check()
 
-  
 #===============================================================================
 #create widget for geme quiting
 class CEscWin:
