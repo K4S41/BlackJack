@@ -37,11 +37,15 @@ class CGameTable:
     #get game window into screen center
     self.table.geometry(
         f"{self.table_width}x{self.table_height}+{int((screen_width - self.table_width)/2)}+{int((screen_height - self.table_height)/2)}")
+    
     #create dealer
     self.dealer = CPlayer()
     
-    #create player 1
+    #create player1
     self.player1=CPlayer()
+
+    #create player2 (player1 split hand)
+    self.player2=CPlayer()
 
     #create drawing deck
     self.drawing_deck = CDeck(anum_decks=num_pack10)
@@ -184,20 +188,34 @@ class CGameTable:
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
     #self.drawing_deck.place_reverse_side(ax=300,ay=50)
-    self.button_switcher()
-    #--------------------------------------------------------------------------------
+    self.win_lose_check("deal")
+    
+  #--------------------------------------------------------------------------------
+  #this function will check if game state is not: immediatly lose or win 
+  def win_lose_check(self,abutton=None):
+    if True:
+      hand = self.player1.hand
+    else:
+      hand = self.player2.hand
+    #auto-lose condition
+    if hand.calculate_hand_value(hand)>21:
+      print("You have lose!")
+    #auto-win condition 
+    if hand.calculate_hand_value(hand)==21:
+      print("You have win!")
+
+    self.button_switcher(abutton)
+#--------------------------------------------------------------------------------
   #function which shut on/off buttons and check win/lose conditions
-  def button_switcher(self,abutton=None,ahand=self.player1.hand):
-    hand = ahand
+  def button_switcher(self,abutton=None):
+    hand = self.player1.hand
     #to define default values for button switcher
     self.b_deal = 0
-    self.b_hit = 1
-    self.b_stand = 1
+    self.b_hit = 0
+    self.b_stand = 0
     self.b_double = 0
     self.b_split = 0
     self.b_insurance = 0
-    #auto win/lose check
-    self.win_lose_check()
 
     #have player cards the same rank. if yes, it is possible to split this cards
     if len(hand.cards)==2:
@@ -230,34 +248,22 @@ class CGameTable:
     else:self.split_button.config(state=tk.DISABLED)
     if ab_insurance==1:self.insurance_button.config(state=tk.NORMAL)
     else:self.insurance_button.config(state=tk.DISABLED)   
-  #--------------------------------------------------------------------------------
-  #this function will check if game state is not: immediatly lose or win 
-  def win_lose_check(self):
-    hand = self.player1.hand
-    #auto-lose condition
-    if hand.calculate_hand_value(hand)>21:
-      print("You have lose!")
-      self.button_states(1,0,0,0,0,0)
-    #auto-win condition 
-    if hand.calculate_hand_value(hand)==21:
-      print("You have win!")
-      self.button_states(1,0,0,0,0,0)
+    
   #--------------------------------------------------------------------------------
   #player draw new card
   def hit(self):
     self.drawing_deck.move_card(self.player1.hand)
-    self.button_switcher()
+    self.win_lose_check("hit")
   
   #--------------------------------------------------------------------------------
   # take just one more card and double your bet
   def double_down(self):
     self.drawing_deck.move_card(self.player1.hand)
-    self.button_switcher("double")
+    self.win_lose_check("double")
 
   #--------------------------------------------------------------------------------
   # devide player hand into the two new decks
   def split(self):
-    self.player2=CPlayer()
     #hide card images after split
     self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
     self.split_cover.place(x=280,y=280)
@@ -272,7 +278,7 @@ class CGameTable:
     self.split_cover.place(x=480,y=280)
     self.drawing_deck.move_card(self.player2.hand)
 
-    self.button_switcher()
+    self.win_lose_check("split")
     
 
   
@@ -446,8 +452,9 @@ class CDeck:
     t_width = game.table_width
     # purpose of local variable 'lcs' is code shortening 
     lcs = len(ato.cards)
+
     # check if object player2 does exist and choose way of images showing
-    if hasattr(game, 'player2'):
+    if isinstance(game.player2,CPlayer)==True and len(game.player2.hand.cards)!=0:
       id_num=0
       if ato == game.player1.hand:id_num = 1
       elif ato == game.player2.hand:id_num = -1
