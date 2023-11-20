@@ -56,6 +56,9 @@ class CGameTable:
     #returns the active player's hand
     self.activ = self.player1.hand
 
+    #define button state for function button_sates()- buttons: deal, hit, stand, double, split, insurance
+    self.but_s=[0,1,1,0,0,0]
+
     #create game menu panel
 
     self.table_game_menu = tk.Canvas(self.table,
@@ -99,10 +102,7 @@ class CGameTable:
                                   border=2,
                                   bg=abutt_bg_color,
                                   state=tk.DISABLED,
-                                  command= lambda: print(
-                                    self.dealer.player_id,
-                                    self.player1.player_id,
-                                    self.player2.player_id))
+                                  command=lambda: self.stand())
     # button "double your bet"
     self.double_button = tk.Button(self.table,
                                    text="Double",
@@ -128,7 +128,8 @@ class CGameTable:
                                       width=8,
                                       border=2,
                                       state=tk.DISABLED,
-                                      bg=abutt_bg_color,)
+                                      bg=abutt_bg_color,
+                                      command=lambda: self.insurance())
 
     #create (object) popup windows with button function label
     CWidgetInfo(self.deal_button, "deal_button_note")
@@ -181,71 +182,58 @@ class CGameTable:
     self.table.bind(
         '<Escape>',
         lambda e, bg_color="#ddddee": CEscWin(bg_color))
+
   #--------------------------------------------------------------------------------
   #function to switch buttons, whether they are active or not 0 - off, 1 - on
-  def button_states(self,ab_deal=1,ab_hit=0,ab_stand=0,ab_double=0,ab_split=0,ab_insurance=0):
-    if ab_deal==1:self.deal_button.config(state=tk.NORMAL)
+  def button_states(self):
+    #ensures that the state of the DEAL button is toggled
+    if self.but_s[0]==1:self.deal_button.config(state=tk.NORMAL)
     else:self.deal_button.config(state=tk.DISABLED)
-    if ab_hit==1:self.hit_button.config(state=tk.NORMAL)
+    #ensures that the state of the HIT button is toggled
+    if self.but_s[1]==1:self.hit_button.config(state=tk.NORMAL)
     else:self.hit_button.config(state=tk.DISABLED)
-    if ab_stand==1:self.stand_button.config(state=tk.NORMAL)
+    #ensures that the state of the STAND button is toggled
+    if self.but_s[2]==1:self.stand_button.config(state=tk.NORMAL)
     else:self.stand_button.config(state=tk.DISABLED)
-    if ab_double==1:self.double_button.config(state=tk.NORMAL)
+    #ensures that the state of the DOUBLE button is toggled
+    if self.but_s[3]==1:self.double_button.config(state=tk.NORMAL)
     else:self.double_button.config(state=tk.DISABLED)
-    if ab_split==1:self.split_button.config(state=tk.NORMAL)
+    #ensures that the state of the SPLIT button is toggled
+    if self.but_s[4]==1:self.split_button.config(state=tk.NORMAL)
     else:self.split_button.config(state=tk.DISABLED)
-    if ab_insurance==1:self.insurance_button.config(state=tk.NORMAL)
+    #ensures that the state of the INSURANCE button is toggled
+    if self.but_s[5]==1:self.insurance_button.config(state=tk.NORMAL)
     else:self.insurance_button.config(state=tk.DISABLED)
 
-  #--------------------------------------------------------------------------------
-  def deal_cards(self):
-    #define variables for button_states arguments
-    self.b_split = 0
-    self.b_double = 0
-    self.b_insurance = 0 
-    #deal cards to dealer
-    self.drawing_deck.move_card(self.dealer.hand, ay=50)
-    #deal cards to player
-    self.drawing_deck.move_card(self.player1.hand)
-    self.drawing_deck.table_cleaner(self.player1.hand)
-    self.drawing_deck.move_card(self.player1.hand)
-    #determines whether the player won immediately
-    if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
-      print("You have win!")
-    #have player cards the same rank. if yes, it is possible to split this cards
-    if self.player1.hand.cards[0].rank == self.player1.hand.cards[1].rank: 
-      self.b_split = 1
-    # if the sum of the cards dealt is 9, 10 or 11, it is possible to double down
-    if 8<(self.player1.hand.cards[0].value + self.player1.hand.cards[1].value)<12:
-      self.b_double = 1
-    # button state setup - only split could change value
-    if self.dealer.hand.cards[0].rank == "ace":
-      self.b_insurance = 1
-    self.button_states(0, 1, 1, self.b_double, self.b_split, self.b_insurance)
-
-  #--------------------------------------------------------------------------------
-  #this function will check if game state is not: immediatly lose or win 
-  def lose_check(self):
-    
-    #auto-lose condition
-    if self.activ.calculate_hand_value(self.activ)>21:
-      print("Player1 have lose!")
-       
-    
-  #--------------------------------------------------------------------------------
+      #--------------------------------------------------------------------------------
   #player draw new card
   def hit(self):
     self.drawing_deck.move_card(self.activ)
-
+    #make double and split button disabled
+    self.but_s[3]=0
+    self.but_s[4]=0
     self.lose_check()
+    self.button_states()
 
-  
+  #--------------------------------------------------------------------------------
+  #switches the active player
+  def stand(self):
+    self.player_switch()
+    # if sum of the player hand2 hand is <9,11> double botton is not disabled
+    if 8<(self.activ.cards[0].value + self.activ.cards[1].value)<12:
+      self.but_s[3] = 1
+    self.button_states()
+
   #--------------------------------------------------------------------------------
   # take just one more card and double your bet
   def double_down(self):
     self.drawing_deck.move_card(self.activ)
-
+    #make double and split button disabled
+    self.but_s[3]=0
+    self.but_s[4]=0
     self.lose_check()
+    self.button_states()
+    self.player_switch()
 
 
   #--------------------------------------------------------------------------------
@@ -263,9 +251,76 @@ class CGameTable:
     #player2 dealing a second (to second hand of player1)
     self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
     self.split_cover.place(x=480,y=280)
-    self.drawing_deck.move_card(self.player2.hand)
-
+    self.drawing_deck.move_card(self.player2.hand)   
+    #make split and insurance button disabled and double active
+    self.but_s[4] = 0
+    self.but_s[5] = 0
     self.lose_check()
+    self.button_states()
+
+  #--------------------------------------------------------------------------------
+  #insures player´s bet against dealer´s '21' (Black Jack)
+  def insurance(self):
+    self.but_s[5] = 0
+    self.button_states()
+
+  #--------------------------------------------------------------------------------
+  def deal_cards(self):
+    #define variables for button_states arguments
+    #deal cards to dealer
+    self.drawing_deck.move_card(self.dealer.hand, ay=50)
+    #deal cards to player
+    self.drawing_deck.move_card(self.player1.hand)
+    self.drawing_deck.table_cleaner(self.player1.hand)
+    self.drawing_deck.move_card(self.player1.hand)
+    #determines whether the player won immediately
+    if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
+      print("You have win!")
+    #if sum of the player´s hand is <9,11> double botton is not disabled
+    if 8<(self.activ.cards[0].value + self.activ.cards[1].value)<12:
+      self.but_s[3] = 1
+    #have player cards the same rank. if yes, it is possible to split this cards
+    if self.activ.cards[0].rank == self.activ.cards[1].rank: 
+      self.but_s[4] = 1
+    # button state setup - only split could change value
+    if self.dealer.hand.cards[0].rank == "ace":
+      self.but_s[5] = 1
+    self.button_states()
+
+  #--------------------------------------------------------------------------------
+  #this function will check if game state is not: immediatly lose or win 
+  def lose_check(self):
+    
+    #auto-lose condition
+    if self.activ.calculate_hand_value(self.activ)>21:
+      self.player_switch()  
+  #-------------------------------------------------------------------------------- 
+  def player_switch(self):
+    #switch from player1 game to player2 game if he has any cards
+    if self.activ==self.player1.hand and len(self.player2.hand.cards) != 0:
+      self.activ=self.player2.hand
+    #if sum of the player´s hand is <9,11> double botton is not disabled
+      if 8<(self.player2.hand.cards[0].value + self.player2.hand.cards[1].value)<12:
+        self.but_s[3] = 1
+      print("player2")
+    #switch from player2 game to dealers_game
+    elif self.activ==self.player2.hand:
+      self.dealers_game()
+    #switch from player1 game to dealers_game if player2 has no cards
+    else:
+      self.dealers_game()
+
+
+  #-------------------------------------------------------------------------------- 
+  def dealers_game(self):
+    self.but_s[1]=0
+    self.but_s[2]=0
+    self.button_states()
+    while sum(card.value for card in self.dealer.hand.cards)<17:
+      self.drawing_deck.move_card(self.dealer.hand, ay=50)
+      print(sum(self.dealer.hand.cards))
+
+    pass
 
 #===============================================================================
 #create widget for geme quiting
@@ -399,8 +454,8 @@ class CDeck:
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
           for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in [
-              '2']]
-      #, '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
+              '5']]
+      #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
     #create empty deck
