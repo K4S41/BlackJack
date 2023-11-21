@@ -14,6 +14,7 @@ starting_budget20 = int(config["Settings"]["budget"])
 b_strategy30 = bool(config["Settings"]["strategy"])
 lang40 = int(config["Settings"]["language"])
 
+
 #main window creating
 #===============================================================================
 class CGameTable:
@@ -23,7 +24,6 @@ class CGameTable:
     #game interface crating - board
     self.button_state = abutton_state
     config.read("config.ini")
-    lang40 = int(config["Settings"]["language"])
     self.table = tk.Tk()
     self.table.title("BlackJackGame")
     self.table.configure(background=self.bg_color)
@@ -37,7 +37,6 @@ class CGameTable:
     #get game window into screen center
     self.table.geometry(
         f"{self.table_width}x{self.table_height}+{int((screen_width - self.table_width)/2)}+{int((screen_height - self.table_height)/2)}")
-    
     #create dealer
     self.dealer = CPlayer()
     
@@ -301,11 +300,13 @@ class CGameTable:
     pass
   #--------------------------------------------------------------------------------  
   def show_win_lose_label(self,aplayer,aw_l):  
+    config.read("config.ini")
+    lang40 = int(config["Settings"]["language"])
     t_width = self.table_width
     x_pos=(t_width)/2-50
     y_pos=465
     if aw_l=="lose":
-      text="Lose!"
+      self.text=dict_en_cz["lose"][lang40]
       if aplayer==self.player1.hand and len(self.player2.hand.cards)==0:
         pass
       elif aplayer==self.player1.hand and len(self.player2.hand.cards)!=0:
@@ -314,7 +315,7 @@ class CGameTable:
         x_pos+=t_width/4
       elif aplayer==self.dealer.hand:
         y_pos=215
-      self.w_l_label = tk.Label(self.table, text=f"{text}",
+      self.w_l_label = tk.Label(self.table, text=f"{self.text}",
                             font=("Arial", 25,"bold"),
                             fg="#992222",
                             bg=game.bg_color)
@@ -352,8 +353,10 @@ class CGameTable:
     self.win_check()
 
 #===============================================================================
-#create widget for geme quiting
+#create widget for game quiting
 class CEscWin:
+  config.read("config.ini")
+  lang40 = int(config["Settings"]["language"])
   #--------------------------------------------------------------------------------
   def __init__(self, bg_color="#ddddee", abutt_bg_color="#ccccff"):
     self.esc_window = tk.Toplevel()

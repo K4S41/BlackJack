@@ -19,4 +19,5 @@ dict_en_cz = {
     "deal_button_note":["Deal a new hand.","Rozdej nové karty."],
     "want_quit": ["Do you want to quit?", "Opravdu chceš odejít?"],
     "your": ["Your", "Tvůj"],
+    "lose": ["Lose!", "Prohra!"],
 }
