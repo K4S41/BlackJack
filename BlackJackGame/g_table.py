@@ -222,6 +222,8 @@ class CGameTable:
     # if sum of the player hand2 hand is <9,11> double botton is not disabled
     if 8<(self.activ.cards[0].value + self.activ.cards[1].value)<12:
       self.but_s[3] = 1
+      #make split button disabled
+    self.but_s[4]=0
     self.button_states()
 
   #--------------------------------------------------------------------------------
@@ -234,7 +236,6 @@ class CGameTable:
     self.lose_check()
     self.button_states()
     self.player_switch()
-
 
   #--------------------------------------------------------------------------------
   # devide player hand into the two new decks
@@ -255,7 +256,6 @@ class CGameTable:
     #make split and insurance button disabled and double active
     self.but_s[4] = 0
     self.but_s[5] = 0
-    self.lose_check()
     self.button_states()
 
   #--------------------------------------------------------------------------------
@@ -293,7 +293,34 @@ class CGameTable:
     
     #auto-lose condition
     if self.activ.calculate_hand_value(self.activ)>21:
-      self.player_switch()  
+      self.show_win_lose_label(self.activ,"lose")
+      self.player_switch() 
+
+  #--------------------------------------------------------------------------------
+  def win_check(self):
+    pass
+  #--------------------------------------------------------------------------------  
+  def show_win_lose_label(self,aplayer,aw_l):  
+    t_width = self.table_width
+    x_pos=(t_width)/2-50
+    y_pos=465
+    if aw_l=="lose":
+      text="Lose!"
+      if aplayer==self.player1.hand and len(self.player2.hand.cards)==0:
+        pass
+      elif aplayer==self.player1.hand and len(self.player2.hand.cards)!=0:
+        x_pos-=t_width/4
+      elif aplayer==self.player2.hand:
+        x_pos+=t_width/4
+      elif aplayer==self.dealer.hand:
+        y_pos=215
+      self.w_l_label = tk.Label(self.table, text=f"{text}",
+                            font=("Arial", 25,"bold"),
+                            fg="#992222",
+                            bg=game.bg_color)
+      self.w_l_label.place(x=x_pos, y=y_pos)
+    
+
   #-------------------------------------------------------------------------------- 
   def player_switch(self):
     #switch from player1 game to player2 game if he has any cards
@@ -302,7 +329,6 @@ class CGameTable:
     #if sum of the player´s hand is <9,11> double botton is not disabled
       if 8<(self.player2.hand.cards[0].value + self.player2.hand.cards[1].value)<12:
         self.but_s[3] = 1
-      print("player2")
     #switch from player2 game to dealers_game
     elif self.activ==self.player2.hand:
       self.dealers_game()
@@ -316,11 +342,14 @@ class CGameTable:
     self.but_s[1]=0
     self.but_s[2]=0
     self.button_states()
+    self.dealer_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.dealer_cover.place(x=280,y=40)
+    self.drawing_deck.move_card(self.dealer.hand, ay=50)
     while sum(card.value for card in self.dealer.hand.cards)<17:
+      self.drawing_deck.table_cleaner(self.dealer.hand)
       self.drawing_deck.move_card(self.dealer.hand, ay=50)
-      print(sum(self.dealer.hand.cards))
-
-    pass
+      print(sum(card.value for card in self.dealer.hand.cards))
+    self.win_check()
 
 #===============================================================================
 #create widget for geme quiting
@@ -454,7 +483,7 @@ class CDeck:
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
           for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in [
-              '5']]
+              '9']]
       #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
@@ -525,7 +554,7 @@ class CDeck:
                             fg="#000000",
                             bg=game.bg_color)
       self.value_total.place(x=(t_width)/2-10, y=ay-25)
-    
+
   #--------------------------------------------------------------------------------
   #return total value of hand (argument 'ahand')
   def calculate_hand_value(self,ahand):
