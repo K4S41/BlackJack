@@ -343,7 +343,6 @@ class CGameTable:
     while sum(card.value for card in self.dealer.hand.cards)<17:
       self.drawing_deck.table_cleaner(self.dealer.hand)
       self.drawing_deck.move_card(self.dealer.hand, ay=50)
-      print(sum(card.value for card in self.dealer.hand.cards))
     self.win_check()
 
 #===============================================================================
@@ -475,9 +474,9 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in [
-              '9']]
-      #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['Ace']]
+      # '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
+      
       # shuffle created deck
       random.shuffle(self.cards)
     #create empty deck
@@ -552,9 +551,16 @@ class CDeck:
   #return total value of hand (argument 'ahand')
   def calculate_hand_value(self,ahand):
     total_value = 0
+    aces_sum = 0
+    #add 1 for each 'Ace' in hand ('Ace' could have value 11 or 1)
+    aces_sum = sum(1 for card in ahand.cards if card.rank=='Ace')
+    #sum card values in hand
     for card in ahand.cards:
         total_value += int(card.value)
-    self.hand_value = total_value
+    #it will change 'Ace´s' value from 11 to 1 if card value total is higher than 21
+    while total_value >21 and aces_sum > 0:
+      total_value -= 10
+      aces_sum -= 1
     return total_value
   #--------------------------------------------------------------------------------
   #removes card from one deck amd return it for later using
@@ -590,7 +596,8 @@ class CPlayer:
 #===============================================================================
 #initiates main class and crates the game board
 def create_game_window():
-  global game,config,num_pack10, starting_budget20, b_strategy30,lang40
+  global game, config, num_pack10, starting_budget20, b_strategy30, lang40
+  #config data loading from config.ini
   config = ConfigParser()
   config.read("config.ini")
   #definition of default variables from config.ini
