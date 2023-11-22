@@ -247,7 +247,8 @@ class CGameTable:
     #player2 dealing a second (to second hand of player1)
     self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
     self.split_cover.place(x=480,y=280)
-    self.drawing_deck.move_card(self.player2.hand)   
+    self.drawing_deck.move_card(self.player2.hand)
+    self.black_jack_check()
     #make split and insurance button disabled and double active
     self.but_s[4] = 0
     self.but_s[5] = 0
@@ -269,8 +270,7 @@ class CGameTable:
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
     #determines whether the player won immediately
-    if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
-      print("You have win!")
+    self.black_jack_check()
     #if sum of the player´s hand is <9,11> double botton is not disabled
     if 8<(self.activ.cards[0].value + self.activ.cards[1].value)<12:
       self.but_s[3] = 1
@@ -292,8 +292,16 @@ class CGameTable:
       self.player_switch() 
 
   #--------------------------------------------------------------------------------
-  def win_check(self):
-    pass
+  #try if some player has '21' = auto-win and switch this player to other
+  def black_jack_check(self):
+    if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
+      self.show_win_lose_label(self.activ,"bj")
+      self.player_switch()
+    if self.player2.hand.calculate_hand_value(self.player2.hand)==21:
+      self.show_win_lose_label(self.player2.hand,"bj")
+      if self.player2.hand==self.activ:
+        self.player_switch()
+
   #--------------------------------------------------------------------------------  
   def show_win_lose_label(self,aplayer,aw_l):  
     t_width = self.table_width
@@ -314,7 +322,20 @@ class CGameTable:
                             fg="#992222",
                             bg=game.bg_color)
       self.w_l_label.place(x=x_pos, y=y_pos)
-    
+    if aw_l=="bj":
+      self.text="Black Jack"
+      if aplayer==self.player1.hand and len(self.player2.hand.cards)==0:
+        pass
+      elif aplayer==self.player1.hand and len(self.player2.hand.cards)!=0:
+        x_pos-=t_width/4
+      elif aplayer==self.player2.hand:
+        x_pos+=t_width/4
+      elif aplayer==self.dealer.hand:
+        y_pos=215
+      self.w_l_label = tk.Label(self.table, text=f"{self.text}",
+                            font=("Arial", 25,"bold"),
+                            fg="#992222",
+                            bg=game.bg_color)
 
   #-------------------------------------------------------------------------------- 
   def player_switch(self):
@@ -343,7 +364,7 @@ class CGameTable:
     while sum(card.value for card in self.dealer.hand.cards)<17:
       self.drawing_deck.table_cleaner(self.dealer.hand)
       self.drawing_deck.move_card(self.dealer.hand, ay=50)
-    self.win_check()
+    
 
 #===============================================================================
 #create widget for game quiting
@@ -474,9 +495,8 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['Ace']]
-      # '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
-      
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in [
+            '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace']]     
       # shuffle created deck
       random.shuffle(self.cards)
     #create empty deck
