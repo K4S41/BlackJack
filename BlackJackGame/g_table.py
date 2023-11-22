@@ -5,25 +5,21 @@ from sys import exit
 from PIL import Image, ImageTk
 from language import dict_en_cz
 from configparser import ConfigParser
-#config.ini data loading
-config = ConfigParser()
-config.read("config.ini")
+
 #definition of default variables from config.ini
-num_pack10 = int(config["Settings"]["packages"])
-starting_budget20 = int(config["Settings"]["budget"])
-b_strategy30 = bool(config["Settings"]["strategy"])
-lang40 = int(config["Settings"]["language"])
+num_pack10 = 0
+starting_budget20 = 0
+b_strategy30 = 0
+lang40 = 0
 
-
-#main window creating
 #===============================================================================
+#main window creating
 class CGameTable:
   #--------------------------------------------------------------------------------
   def __init__(self, amenu_bg_color="#228822",abutt_bg_color="#ccccff",abutton_state=True):
     self.bg_color=amenu_bg_color
     #game interface crating - board
     self.button_state = abutton_state
-    config.read("config.ini")
     self.table = tk.Tk()
     self.table.title("BlackJackGame")
     self.table.configure(background=self.bg_color)
@@ -300,8 +296,6 @@ class CGameTable:
     pass
   #--------------------------------------------------------------------------------  
   def show_win_lose_label(self,aplayer,aw_l):  
-    config.read("config.ini")
-    lang40 = int(config["Settings"]["language"])
     t_width = self.table_width
     x_pos=(t_width)/2-50
     y_pos=465
@@ -355,8 +349,6 @@ class CGameTable:
 #===============================================================================
 #create widget for game quiting
 class CEscWin:
-  config.read("config.ini")
-  lang40 = int(config["Settings"]["language"])
   #--------------------------------------------------------------------------------
   def __init__(self, bg_color="#ddddee", abutt_bg_color="#ccccff"):
     self.esc_window = tk.Toplevel()
@@ -418,9 +410,7 @@ class CWidgetInfo:
   #--------------------------------------------------------------------------------
   #show info widget
   def show_tooltip(self, aevent):
-    #use right language from config.ini
-    config.read("config.ini")
-    lang40 = int(config["Settings"]["language"])
+
 
     #returt info widget position (x, y)
     x, y, _, _ = self.widget.bbox("insert")
@@ -600,5 +590,13 @@ class CPlayer:
 #===============================================================================
 #initiates main class and crates the game board
 def create_game_window():
-  global game
+  global game,config,num_pack10, starting_budget20, b_strategy30,lang40
+  config = ConfigParser()
+  config.read("config.ini")
+  #definition of default variables from config.ini
+  num_pack10 = int(config["Settings"]["packages"])
+  starting_budget20 = int(config["Settings"]["budget"])
+  b_strategy30 = bool(config["Settings"]["strategy"])
+  lang40 = int(config['Settings']['language'])
+
   game=CGameTable()

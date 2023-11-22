@@ -44,6 +44,7 @@ def create_settings_menu(amenu_bg_color="#ddddee"):
     config_update()
     create_main_menu(amenu_bg_color="#ddddee")
 
+
   settings_panel = tk.Tk()
   # to get widget into screen center
   screen_width = settings_panel.winfo_screenwidth()
