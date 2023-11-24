@@ -33,6 +33,7 @@ class CGameTable:
     #get game window into screen center
     self.table.geometry(
         f"{self.table_width}x{self.table_height}+{int((screen_width - self.table_width)/2)}+{int((screen_height - self.table_height)/2)}")
+    
     #create dealer
     self.dealer = CPlayer()
     
@@ -42,20 +43,19 @@ class CGameTable:
     #create player2 (player1 split hand)
     self.player2=CPlayer()
 
+    #list of players (dealer)
+    self.players=[self.player1,self.player2,self.dealer]
+
     #create drawing deck
     self.drawing_deck = CDeck(anum_decks=num_pack10)
 
     #create discard deck
     self.discard_deck = CDeck(anum_decks=0)
 
-    #returns the active player's hand
-    self.activ = self.player1.hand
-
     #define button state for function button_sates()- buttons: deal, hit, stand, double, split, insurance
     self.but_s=[0,1,1,0,0,0]
 
     #create game menu panel
-
     self.table_game_menu = tk.Canvas(self.table,
                                      width=self.table_width,
                                      height=self.table_height / 8,
@@ -176,8 +176,13 @@ class CGameTable:
     #assign key ESC as 'escape' function
     self.table.bind(
         '<Escape>',
-        lambda e, bg_color="#ddddee": CEscWin(bg_color))
-
+        lambda e, bg_color="#ddddee": CEscWin(bg_color))  
+  #--------------------------------------------------------------------------------
+  def active_player (self):
+    for instance in self.players:
+      if instance.state=="active":
+        return instance
+    
   #--------------------------------------------------------------------------------
   #function to switch buttons, whether they are active or not 0 - off, 1 - on
   def button_states(self):
@@ -203,38 +208,36 @@ class CGameTable:
       #--------------------------------------------------------------------------------
   #player draw new card
   def hit(self):
-    self.drawing_deck.move_card(self.activ)
+    self.drawing_deck.move_card(self.active_player().hand)
     #make double and split button disabled
     self.but_s[3]=0
     self.but_s[4]=0
-    self.lose_check()
     self.button_states()
 
   #--------------------------------------------------------------------------------
   #switches the active player
   def stand(self):
-    self.player_switch()
-    # if sum of the player hand2 hand is <9,11> double botton is not disabled
-    if 8<(self.activ.cards[0].value + self.activ.cards[1].value)<12:
-      self.but_s[3] = 1
-      #make split button disabled
+    #make split button disabled
     self.but_s[4]=0
     self.button_states()
+    self.player_switch()
+
 
   #--------------------------------------------------------------------------------
   # take just one more card and double your bet
   def double_down(self):
-    self.drawing_deck.move_card(self.activ)
+    self.drawing_deck.move_card(self.active_player().hand)
     #make double and split button disabled
     self.but_s[3]=0
     self.but_s[4]=0
-    self.lose_check()
     self.button_states()
     self.player_switch()
 
   #--------------------------------------------------------------------------------
   # devide player hand into the two new decks
   def split(self):
+    #player2 state is "active"
+    self.players[1].state = "active"
     #hide card images after split
     self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
     self.split_cover.place(x=280,y=280)
@@ -272,35 +275,34 @@ class CGameTable:
     #determines whether the player won immediately
     self.black_jack_check()
     #if sum of the player´s hand is <9,11> double botton is not disabled
-    if 8<(self.activ.cards[0].value + self.activ.cards[1].value)<12:
+    if 8<(self.player1.hand.cards[0].value + self.player1.hand.cards[1].value)<12:
       self.but_s[3] = 1
     #have player cards the same rank. if yes, it is possible to split this cards
-    if self.activ.cards[0].rank == self.activ.cards[1].rank: 
+    if self.player1.hand.cards[0].rank == self.player1.hand.cards[1].rank: 
       self.but_s[4] = 1
     # button state setup - only split could change value
     if self.dealer.hand.cards[0].rank == "ace":
       self.but_s[5] = 1
+    self.player1.state="active"
     self.button_states()
 
   #--------------------------------------------------------------------------------
-  #this function will check if game state is not: immediatly lose or win 
-  def lose_check(self):
-    
-    #auto-lose condition
-    if self.activ.calculate_hand_value(self.activ)>21:
-      self.show_win_lose_label(self.activ,"lose")
-      self.player_switch() 
-
-  #--------------------------------------------------------------------------------
   #try if some player has '21' = auto-win and switch this player to other
+  #it will check if player1 has '21' and in this case it will switch player
   def black_jack_check(self):
     if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
-      self.show_win_lose_label(self.activ,"bj")
+      self.show_win_lose_label(self.active_player().hand,"bj")
       self.player_switch()
+    #it will check if player2 has '21' and switch player if player2 is activ player
     if self.player2.hand.calculate_hand_value(self.player2.hand)==21:
       self.show_win_lose_label(self.player2.hand,"bj")
-      if self.player2.hand==self.activ:
+      if self.player2.hand==self.active_player().hand:
         self.player_switch()
+
+  #--------------------------------------------------------------------------------
+  #game evaluation after dealer has driven last card 
+  def game_evaluation(self):
+    pass
 
   #--------------------------------------------------------------------------------  
   def show_win_lose_label(self,aplayer,aw_l):  
@@ -340,30 +342,39 @@ class CGameTable:
   #-------------------------------------------------------------------------------- 
   def player_switch(self):
     #switch from player1 game to player2 game if he has any cards
-    if self.activ==self.player1.hand and len(self.player2.hand.cards) != 0:
-      self.activ=self.player2.hand
-    #if sum of the player´s hand is <9,11> double botton is not disabled
+    self.active_player().state="stand"
+    try:
+      # no effect but it will try, if other active player exist
+      self.active_player().state="active"
       if 8<(self.player2.hand.cards[0].value + self.player2.hand.cards[1].value)<12:
         self.but_s[3] = 1
-    #switch from player2 game to dealers_game
-    elif self.activ==self.player2.hand:
+        self.button_states()
+    except AttributeError:
+      self.but_s[0] = 0
+      self.but_s[1] = 0
+      self.but_s[2] = 0
+      self.but_s[3] = 0
+      self.but_s[4] = 0
+      self.but_s[5] = 0
       self.dealers_game()
-    #switch from player1 game to dealers_game if player2 has no cards
-    else:
-      self.dealers_game()
-
 
   #-------------------------------------------------------------------------------- 
   def dealers_game(self):
+    hand=self.dealer.hand
     self.but_s[1]=0
     self.but_s[2]=0
     self.button_states()
-    self.dealer_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.dealer_cover=tk.Canvas(self.table,
+                                width=240,
+                                height=185,
+                                bg="#228822",
+                                bd=0,
+                                highlightthickness=0)
     self.dealer_cover.place(x=280,y=40)
-    self.drawing_deck.move_card(self.dealer.hand, ay=50)
-    while sum(card.value for card in self.dealer.hand.cards)<17:
-      self.drawing_deck.table_cleaner(self.dealer.hand)
-      self.drawing_deck.move_card(self.dealer.hand, ay=50)
+    self.drawing_deck.move_card(hand, ay=50)
+    while hand.calculate_hand_value(hand)<17:
+      self.drawing_deck.table_cleaner(hand)
+      self.drawing_deck.move_card(hand, ay=50)
     
 
 #===============================================================================
@@ -495,8 +506,8 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in [
-            '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace']]     
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['5']]     
+      #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
     #create empty deck
@@ -535,12 +546,12 @@ class CDeck:
     lcs = len(ato.cards)
 
     # check if object player2 does exist and choose way of images showing
-    if isinstance(game.player2,CPlayer)==True and len(game.player2.hand.cards)!=0:
+    if game.players[1].state!="passive":
       id_num=0
       if ato == game.player1.hand:id_num = 1
       elif ato == game.player2.hand:id_num = -1
       else: id_num = 0
-      for i in range(len(ato.cards)):
+      for i in range(lcs):
         self.label = tk.Label(game.table, image=self.card_photo[ato.cards[i].suit]
                         [rank_to_list_pos_convertor[ato.cards[i].rank]])
         # method which place card image into the centre of game widget (window)
@@ -607,11 +618,12 @@ class CDeck:
 #===============================================================================
 #class, which creates a new player with a few attributes
 class CPlayer:
-  #--------------------------------------------------------------------------------
   def __init__(self):
-    self.budget = starting_budget20
+    self.state="passive"
     self.hand = CDeck(anum_decks=0)
-    self.bet_amount = 1
+
+    #self.budget = starting_budget20
+    #self.bet_amount = 1
     
 #===============================================================================
 #initiates main class and crates the game board
