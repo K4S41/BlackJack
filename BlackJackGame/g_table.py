@@ -270,8 +270,9 @@ class CGameTable:
     for i in self.players:
       try:
         for _ in range (len(i.hand.cards)):
-          i.hand.move_card(self.discard_deck.hand, afrom=i.hand, ashow_card=False)
+          i.hand.move_card(self.discard_deck, ashow_card=False)
       except: pass
+    print(self.player1.hand.cards,self.player2.hand.cards,self.dealer.hand.cards)
 
     #define variables for button_states arguments
     #deal cards to dealer
@@ -390,6 +391,7 @@ class CGameTable:
       self.but_s[3] = 0
       self.but_s[4] = 0
       self.but_s[5] = 0
+      self.button_states()
     
     if self.player1.state!="active" and self.player2.state!="active":
       self.dealers_game()
@@ -413,8 +415,7 @@ class CGameTable:
       self.drawing_deck.move_card(hand, ay=50)
     self.game_evaluation()
     self.but_s[0] = 1
-    
-    
+    self.button_states()  
 
 #===============================================================================
 #create widget for game quiting
