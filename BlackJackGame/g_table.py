@@ -266,6 +266,13 @@ class CGameTable:
 
   #--------------------------------------------------------------------------------
   def deal_cards(self):
+    #discard player(s) and dealer hands to discard deck
+    for i in self.players:
+      try:
+        for _ in range (len(i.hand.cards)):
+          i.hand.move_card(self.discard_deck.hand, afrom=i.hand, ashow_card=False)
+      except: pass
+
     #define variables for button_states arguments
     #deal cards to dealer
     self.drawing_deck.move_card(self.dealer.hand, ay=50)
@@ -333,7 +340,7 @@ class CGameTable:
   def show_win_lose_label(self,aplayer,aw_l):  
     t_width = self.table_width
     x_pos=(t_width)/2-50
-    y_pos=365 #465 originaly
+    y_pos=465 
     if aw_l=="lose":
       self.text="Lose!"
       #self.text=dict_en_cz["lose"][lang40]
@@ -371,7 +378,7 @@ class CGameTable:
     self.active_player().state="stand"
     try:
       # no effect but it will try, if other active player exist
-      self.active_player().state="active"
+      #self.active_player().state="active"
       self.black_jack_check()
       if 8<(self.player2.hand.cards[0].value + self.player2.hand.cards[1].value)<12:
         self.but_s[3] = 1
@@ -383,6 +390,8 @@ class CGameTable:
       self.but_s[3] = 0
       self.but_s[4] = 0
       self.but_s[5] = 0
+    
+    if self.player1.state!="active" and self.player2.state!="active":
       self.dealers_game()
 
   #-------------------------------------------------------------------------------- 
@@ -403,6 +412,8 @@ class CGameTable:
       self.drawing_deck.table_cleaner(hand)
       self.drawing_deck.move_card(hand, ay=50)
     self.game_evaluation()
+    self.but_s[0] = 1
+    
     
 
 #===============================================================================
@@ -534,7 +545,7 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['Queen','King', 'Ace']]     
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['7']]     
       #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
