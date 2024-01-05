@@ -213,7 +213,7 @@ class CGameTable:
     self.but_s[3]=0
     self.but_s[4]=0
     self.button_states()
-    if self.active_player().hand.calculate_hand_value(self.active_player().hand)>21:
+    if self.active_player().hand.calculate_hand_value(self.active_player().hand)>=21:
       self.player_switch()
 
   #--------------------------------------------------------------------------------
@@ -293,7 +293,7 @@ class CGameTable:
   #it will check if player1 has '21' and in this case it will switch player
   def black_jack_check(self):
 
-    if self.active_player().hand.calculate_hand_value(self.active_player().hand)==21 and len(self.active_player().hand)==2:
+    if self.active_player().hand.calculate_hand_value(self.active_player().hand)==21 and len(self.active_player().hand.cards)==2:
       self.show_win_lose_label(self.active_player(),"bj")
       self.player_switch()
 
@@ -372,6 +372,7 @@ class CGameTable:
     try:
       # no effect but it will try, if other active player exist
       self.active_player().state="active"
+      self.black_jack_check()
       if 8<(self.player2.hand.cards[0].value + self.player2.hand.cards[1].value)<12:
         self.but_s[3] = 1
         self.button_states()
