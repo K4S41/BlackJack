@@ -213,6 +213,8 @@ class CGameTable:
     self.but_s[3]=0
     self.but_s[4]=0
     self.button_states()
+    if self.active_player().hand.calculate_hand_value(self.active_player().hand)>21:
+      self.player_switch()
 
   #--------------------------------------------------------------------------------
   #switches the active player
@@ -221,7 +223,6 @@ class CGameTable:
     self.but_s[4]=0
     self.button_states()
     self.player_switch()
-
 
   #--------------------------------------------------------------------------------
   # take just one more card and double your bet
@@ -272,45 +273,70 @@ class CGameTable:
     self.drawing_deck.move_card(self.player1.hand)
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
+    #make player1 active
+    self.player1.state="active"
     #determines whether the player won immediately
     self.black_jack_check()
     #if sum of the player´s hand is <9,11> double botton is not disabled
     if 8<(self.player1.hand.cards[0].value + self.player1.hand.cards[1].value)<12:
       self.but_s[3] = 1
     #have player cards the same rank. if yes, it is possible to split this cards
-    if self.player1.hand.cards[0].rank == self.player1.hand.cards[1].rank: 
+    if self.player1.hand.cards[0].value == self.player1.hand.cards[1].value: 
       self.but_s[4] = 1
     # button state setup - only split could change value
     if self.dealer.hand.cards[0].rank == "ace":
       self.but_s[5] = 1
-    self.player1.state="active"
     self.button_states()
 
   #--------------------------------------------------------------------------------
   #try if some player has '21' = auto-win and switch this player to other
   #it will check if player1 has '21' and in this case it will switch player
   def black_jack_check(self):
-    if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
-      self.show_win_lose_label(self.active_player().hand,"bj")
+
+    if self.active_player().hand.calculate_hand_value(self.active_player().hand)==21 and len(self.active_player().hand)==2:
+      self.show_win_lose_label(self.active_player(),"bj")
       self.player_switch()
-    #it will check if player2 has '21' and switch player if player2 is activ player
-    if self.player2.hand.calculate_hand_value(self.player2.hand)==21:
-      self.show_win_lose_label(self.player2.hand,"bj")
-      if self.player2.hand==self.active_player().hand:
-        self.player_switch()
 
   #--------------------------------------------------------------------------------
   #game evaluation after dealer has driven last card 
   def game_evaluation(self):
-    pass
+    player1=self.player1.hand.calculate_hand_value(self.player1.hand)
+    player2=self.player2.hand.calculate_hand_value(self.player2.hand)
+    dealer=self.dealer.hand.calculate_hand_value(self.dealer.hand)
+
+    if player1>21:
+      self.player1.state="lose"
+    else:
+      if dealer>21:
+        self.player1.state="win"
+      elif player1>dealer:
+        self.player1.state="win"
+      elif player1==dealer:
+        self.player1.state="draw"
+      elif player1<dealer:
+        self.player1.state="lose"
+    
+    if player2>0:
+      if player2>21:
+        self.player2.state="lose"
+      else:
+        if dealer>21:
+          self.player2.state="win"
+        elif player2>dealer:
+          self.player2.state="win"
+        elif player2==dealer:
+          self.player2.state="draw"
+        elif player2<dealer:
+          self.player2.state="lose"
 
   #--------------------------------------------------------------------------------  
   def show_win_lose_label(self,aplayer,aw_l):  
     t_width = self.table_width
     x_pos=(t_width)/2-50
-    y_pos=465
+    y_pos=365 #465 originaly
     if aw_l=="lose":
-      self.text=dict_en_cz["lose"][lang40]
+      self.text="Lose!"
+      #self.text=dict_en_cz["lose"][lang40]
       if aplayer==self.player1.hand and len(self.player2.hand.cards)==0:
         pass
       elif aplayer==self.player1.hand and len(self.player2.hand.cards)!=0:
@@ -375,6 +401,7 @@ class CGameTable:
     while hand.calculate_hand_value(hand)<17:
       self.drawing_deck.table_cleaner(hand)
       self.drawing_deck.move_card(hand, ay=50)
+    self.game_evaluation()
     
 
 #===============================================================================
@@ -506,7 +533,7 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['5']]     
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['Queen','King', 'Ace']]     
       #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
@@ -598,7 +625,7 @@ class CDeck:
   def draw_card(self):
     if len(self.cards) == 0:
       return None
-    return self.cards.pop()
+    else: return self.cards.pop()
   #--------------------------------------------------------------------------------
   #removes old card images from the game table
   def table_cleaner(self,ato):
