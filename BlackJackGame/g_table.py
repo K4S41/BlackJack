@@ -278,10 +278,8 @@ class CGameTable:
   def deal_cards(self):
     #discard player(s) and dealer hands to discard deck
     for i in self.players:
-      try:
-        for _ in range (len(i.hand.cards)):
-          i.hand.move_card(self.discard_deck, ashow_card=False)
-      except: pass
+      for _ in range (len(i.hand.cards)):
+        i.hand.move_card(self.discard_deck, ashow_card=False)
 
     #define variables for button_states arguments
     #deal cards to dealer
@@ -592,7 +590,7 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['Queen','King', 'Ace']]     
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace']]     
       #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
