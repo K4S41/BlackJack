@@ -252,12 +252,22 @@ class CGameTable:
     self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
     self.split_cover.place(x=480,y=280)
     self.drawing_deck.move_card(self.player2.hand)
-    self.black_jack_check()
+    #determines whether the player won immediately - its black jack check
+    if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
+      self.show_win_lose_label(self.player1,"bj")
+      self.player_switch()
+    if self.player2.hand.calculate_hand_value(self.player2.hand)==21 and self.player1.state!="active":
+      self.show_win_lose_label(self.player2,"bj")
+      self.player_switch()
+    elif self.player2.hand.calculate_hand_value(self.player2.hand)==21 and self.player1.state=="active":
+      self.show_win_lose_label(self.player2,"bj")
+      self.players[1].state = "passive"
+
     #make split and insurance button disabled and double active
     self.but_s[4] = 0
     self.but_s[5] = 0
     self.button_states()
-
+    
   #--------------------------------------------------------------------------------
   #insures player´s bet against dealer´s '21' (Black Jack)
   def insurance(self):
@@ -282,8 +292,11 @@ class CGameTable:
     self.drawing_deck.move_card(self.player1.hand)
     #make player1 active
     self.player1.state="active"
-    #determines whether the player won immediately
-    self.black_jack_check()
+    #determines whether the player won immediately - its black jack check
+    if self.active_player().hand.calculate_hand_value(self.active_player().hand)==21:
+      self.show_win_lose_label(self.active_player(),"bj")
+      self.player_switch()
+
     #if sum of the player´s hand is <9,11> double botton is not disabled
     if 8<(self.player1.hand.cards[0].value + self.player1.hand.cards[1].value)<12:
       self.but_s[3] = 1
@@ -296,15 +309,6 @@ class CGameTable:
     self.button_states()
 
   #--------------------------------------------------------------------------------
-  #try if some player has '21' = auto-win and switch this player to other
-  #it will check if player1 has '21' and in this case it will switch player
-  def black_jack_check(self):
-
-    if self.active_player().hand.calculate_hand_value(self.active_player().hand)==21 and len(self.active_player().hand.cards)==2:
-      self.show_win_lose_label(self.active_player(),"bj")
-      self.player_switch()
-
-  #--------------------------------------------------------------------------------
   #game evaluation after dealer has driven last card 
   #initiates show_win_lose_label and changes player hand state
   def game_evaluation(self):
@@ -315,6 +319,8 @@ class CGameTable:
     if player1>21:
       self.player1.state="lose"
       self.show_win_lose_label(self.player1,"lose")
+    elif player1==21 and len(self.player1.hand.cards)==2:
+      pass
     else:
       if dealer>21:
         self.player1.state="win"
@@ -327,12 +333,13 @@ class CGameTable:
         self.show_win_lose_label(self.player1,"draw")
       elif player1<dealer:
         self.player1.state="lose"
-        self.show_win_lose_label(self.player1,"lose")
-    
+        self.show_win_lose_label(self.player1,"lose")    
     if player2>0:
       if player2>21:
         self.player2.state="lose"
         self.show_win_lose_label(self.player2,"lose")
+      elif player2==21 and len(self.player2.hand.cards)==2:
+        pass
       else:
         if dealer>21:
           self.player2.state="win"
@@ -352,7 +359,8 @@ class CGameTable:
   
     t_width = self.table_width
     x_pos=(t_width)/2-80
-    y_pos=465 
+    y_pos=465
+    text_font=("Arial", 20,"bold")
     if aw_l=="lose":
       self.text="Lose!"
       #self.text=dict_en_cz["lose"][lang40]
@@ -363,7 +371,7 @@ class CGameTable:
       elif aplayer==self.player2:
         x_pos+=t_width/4+30
       self.w_l_label = tk.Label(self.table, text=f"{self.text}",
-                            font=("Arial", 25,"bold"),
+                            font=(text_font),
                             fg="#992222",
                             bg=game.bg_color)
       self.w_l_label.place(x=x_pos, y=y_pos)
@@ -378,7 +386,7 @@ class CGameTable:
       elif aplayer==self.player2:
         x_pos+=t_width/4+35
       self.w_l_label = tk.Label(self.table, text=f"{self.text}",
-                            font=("Arial", 25,"bold"),
+                            font=(text_font),
                             fg="#992222",
                             bg=game.bg_color)
       self.w_l_label.place(x=x_pos, y=y_pos)
@@ -389,17 +397,17 @@ class CGameTable:
       if aplayer==self.player1 and len(self.player2.hand.cards)==0:
         x_pos+=30
       elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
-        x_pos-=t_width/4-30
+        x_pos-=t_width/4-35
       elif aplayer==self.player2:
-        x_pos+=t_width/4+30
+        x_pos+=t_width/4+35
       self.w_l_label = tk.Label(self.table, text=f"{self.text}",
-                            font=("Arial", 25,"bold"),
+                            font=(text_font),
                             fg="#992222",
                             bg=game.bg_color)
       self.w_l_label.place(x=x_pos, y=y_pos)
 
     if aw_l=="bj":
-      self.text="Black Jack"
+      self.text="Black Jack!"
       if aplayer==self.player1 and len(self.player2.hand.cards)==0:
         pass
       elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
@@ -407,7 +415,7 @@ class CGameTable:
       elif aplayer==self.player2:
         x_pos+=t_width/4
       self.w_l_label = tk.Label(self.table, text=f"{self.text}",
-                            font=("Arial", 25,"bold"),
+                            font=(text_font),
                             fg="#992222",
                             bg=game.bg_color)
       self.w_l_label.place(x=x_pos, y=y_pos)
@@ -418,19 +426,18 @@ class CGameTable:
     self.active_player().state="stand"
     try:
       # no effect but it will try, if other active player exist
-      #self.active_player().state="active"
-      self.black_jack_check()
       if 8<(self.player2.hand.cards[0].value + self.player2.hand.cards[1].value)<12:
         self.but_s[3] = 1
         self.button_states()
     except AttributeError:
       self.but_s[0] = 0
-      self.but_s[1] = 0
-      self.but_s[2] = 0
+      self.but_s[1] = 1
+      self.but_s[2] = 1
       self.but_s[3] = 0
       self.but_s[4] = 0
       self.but_s[5] = 0
       self.button_states()
+    except: pass
     
     if self.player1.state!="active" and self.player2.state!="active":
       self.dealers_game()
@@ -585,7 +592,7 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['7']]     
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['Queen','King', 'Ace']]     
       #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
