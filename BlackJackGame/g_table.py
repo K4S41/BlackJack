@@ -272,7 +272,6 @@ class CGameTable:
         for _ in range (len(i.hand.cards)):
           i.hand.move_card(self.discard_deck, ashow_card=False)
       except: pass
-    print(self.player1.hand.cards,self.player2.hand.cards,self.dealer.hand.cards)
 
     #define variables for button_states arguments
     #deal cards to dealer
@@ -307,6 +306,7 @@ class CGameTable:
 
   #--------------------------------------------------------------------------------
   #game evaluation after dealer has driven last card 
+  #initiates show_win_lose_label and changes player hand state
   def game_evaluation(self):
     player1=self.player1.hand.calculate_hand_value(self.player1.hand)
     player2=self.player2.hand.calculate_hand_value(self.player2.hand)
@@ -314,64 +314,103 @@ class CGameTable:
 
     if player1>21:
       self.player1.state="lose"
+      self.show_win_lose_label(self.player1,"lose")
     else:
       if dealer>21:
         self.player1.state="win"
+        self.show_win_lose_label(self.player1,"win")
       elif player1>dealer:
         self.player1.state="win"
+        self.show_win_lose_label(self.player1,"win")
       elif player1==dealer:
         self.player1.state="draw"
+        self.show_win_lose_label(self.player1,"draw")
       elif player1<dealer:
         self.player1.state="lose"
+        self.show_win_lose_label(self.player1,"lose")
     
     if player2>0:
       if player2>21:
         self.player2.state="lose"
+        self.show_win_lose_label(self.player2,"lose")
       else:
         if dealer>21:
           self.player2.state="win"
+          self.show_win_lose_label(self.player2,"win")
         elif player2>dealer:
           self.player2.state="win"
+          self.show_win_lose_label(self.player2,"win")
         elif player2==dealer:
           self.player2.state="draw"
+          self.show_win_lose_label(self.player2,"draw")
         elif player2<dealer:
           self.player2.state="lose"
+          self.show_win_lose_label(self.player2,"lose")
 
   #--------------------------------------------------------------------------------  
   def show_win_lose_label(self,aplayer,aw_l):  
+  
     t_width = self.table_width
-    x_pos=(t_width)/2-50
+    x_pos=(t_width)/2-80
     y_pos=465 
     if aw_l=="lose":
       self.text="Lose!"
       #self.text=dict_en_cz["lose"][lang40]
-      if aplayer==self.player1.hand and len(self.player2.hand.cards)==0:
-        pass
-      elif aplayer==self.player1.hand and len(self.player2.hand.cards)!=0:
-        x_pos-=t_width/4
-      elif aplayer==self.player2.hand:
-        x_pos+=t_width/4
-      elif aplayer==self.dealer.hand:
-        y_pos=215
+      if aplayer==self.player1 and len(self.player2.hand.cards)==0:
+        x_pos+=30
+      elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
+        x_pos-=t_width/4-30
+      elif aplayer==self.player2:
+        x_pos+=t_width/4+30
       self.w_l_label = tk.Label(self.table, text=f"{self.text}",
                             font=("Arial", 25,"bold"),
                             fg="#992222",
                             bg=game.bg_color)
       self.w_l_label.place(x=x_pos, y=y_pos)
-    if aw_l=="bj":
-      self.text="Black Jack"
-      if aplayer==self.player1.hand and len(self.player2.hand.cards)==0:
-        pass
-      elif aplayer==self.player1.hand and len(self.player2.hand.cards)!=0:
-        x_pos-=t_width/4
-      elif aplayer==self.player2.hand:
-        x_pos+=t_width/4
-      elif aplayer==self.dealer.hand:
-        y_pos=215
+
+    if aw_l=="win":
+      self.text="Win!"
+      #self.text=dict_en_cz["lose"][lang40]
+      if aplayer==self.player1 and len(self.player2.hand.cards)==0:
+        x_pos+=35
+      elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
+        x_pos-=t_width/4-35
+      elif aplayer==self.player2:
+        x_pos+=t_width/4+35
       self.w_l_label = tk.Label(self.table, text=f"{self.text}",
                             font=("Arial", 25,"bold"),
                             fg="#992222",
                             bg=game.bg_color)
+      self.w_l_label.place(x=x_pos, y=y_pos)
+
+    if aw_l=="draw":
+      self.text="Draw!"
+      #self.text=dict_en_cz["lose"][lang40]
+      if aplayer==self.player1 and len(self.player2.hand.cards)==0:
+        x_pos+=30
+      elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
+        x_pos-=t_width/4-30
+      elif aplayer==self.player2:
+        x_pos+=t_width/4+30
+      self.w_l_label = tk.Label(self.table, text=f"{self.text}",
+                            font=("Arial", 25,"bold"),
+                            fg="#992222",
+                            bg=game.bg_color)
+      self.w_l_label.place(x=x_pos, y=y_pos)
+
+    if aw_l=="bj":
+      self.text="Black Jack"
+      if aplayer==self.player1 and len(self.player2.hand.cards)==0:
+        pass
+      elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
+        x_pos-=t_width/4
+      elif aplayer==self.player2:
+        x_pos+=t_width/4
+      self.w_l_label = tk.Label(self.table, text=f"{self.text}",
+                            font=("Arial", 25,"bold"),
+                            fg="#992222",
+                            bg=game.bg_color)
+      self.w_l_label.place(x=x_pos, y=y_pos)
 
   #-------------------------------------------------------------------------------- 
   def player_switch(self):
