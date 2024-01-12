@@ -316,7 +316,8 @@ class CGameTable:
     # button state setup - only split could change value
     if self.dealer.hand.cards[0].rank == "ace":
       self.but_s[5] = 1
-    self.button_states()
+    self.but_s[0] = 0
+    self.button_states() 
 
   #--------------------------------------------------------------------------------
   #game evaluation after dealer has driven last card 
