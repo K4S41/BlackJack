@@ -20,4 +20,6 @@ dict_en_cz = {
     "want_quit": ["Do you want to quit?", "Opravdu chceš odejít?"],
     "your": ["Your", "Tvůj"],
     "lose": ["Lose!", "Prohra!"],
+    "win": ["Win!", "Výhra!"],
+    "draw": ["Draw!", "Remíza!"],
 }

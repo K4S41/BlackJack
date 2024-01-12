@@ -256,11 +256,9 @@ class CGameTable:
     if self.player1.hand.calculate_hand_value(self.player1.hand)==21:
       self.show_win_lose_label(self.player1,"bj")
       self.player_switch()
-    if self.player2.hand.calculate_hand_value(self.player2.hand)==21 and self.player1.state!="active":
+    if self.player2.hand.calculate_hand_value(self.player2.hand)==21:
       self.show_win_lose_label(self.player2,"bj")
       self.player_switch()
-    elif self.player2.hand.calculate_hand_value(self.player2.hand)==21 and self.player1.state=="active":
-      self.show_win_lose_label(self.player2,"bj")
       self.players[1].state = "passive"
 
     #make split and insurance button disabled and double active
@@ -297,6 +295,8 @@ class CGameTable:
     self.drawing_deck.move_card(self.player1.hand)
     #make player1 active
     self.player1.state="active"
+    #switch off 'deal' button
+    self.but_s[0] = 0
     #determines whether the player won immediately - its black jack check
     if self.active_player().hand.calculate_hand_value(self.active_player().hand)==21:
       self.show_win_lose_label(self.active_player(),"bj")
@@ -316,7 +316,6 @@ class CGameTable:
     # button state setup - only split could change value
     if self.dealer.hand.cards[0].rank == "ace":
       self.but_s[5] = 1
-    self.but_s[0] = 0
     self.button_states() 
 
   #--------------------------------------------------------------------------------
@@ -373,8 +372,7 @@ class CGameTable:
     y_pos=465
     text_font=("Arial", 20,"bold")
     if aw_l=="lose":
-      self.text="Lose!"
-      #self.text=dict_en_cz["lose"][lang40]
+      self.text=dict_en_cz["lose"][lang40]
       if aplayer==self.player1 and len(self.player2.hand.cards)==0:
         x_pos+=35
       elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
@@ -388,8 +386,7 @@ class CGameTable:
       self.w_l_label.place(x=x_pos, y=y_pos)
 
     if aw_l=="win":
-      self.text="Win!"
-      #self.text=dict_en_cz["lose"][lang40]
+      self.text=dict_en_cz["win"][lang40]
       if aplayer==self.player1 and len(self.player2.hand.cards)==0:
         x_pos+=35
       elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
@@ -404,7 +401,7 @@ class CGameTable:
 
     if aw_l=="draw":
       self.text="Draw!"
-      #self.text=dict_en_cz["lose"][lang40]
+      self.text=dict_en_cz["draw"][lang40]
       if aplayer==self.player1 and len(self.player2.hand.cards)==0:
         x_pos+=30
       elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
@@ -603,7 +600,7 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['Queen','King', 'Ace']]     
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace']]     
       #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
