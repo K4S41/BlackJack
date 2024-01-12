@@ -240,16 +240,16 @@ class CGameTable:
     #player2 state is "active"
     self.players[1].state = "active"
     #hide card images after split
-    self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.split_cover=tk.Canvas(self.table,width=240,height=240,bg="#228822",bd=0,highlightthickness=0)
     self.split_cover.place(x=280,y=280)
     self.player1.hand.move_card(self.player2.hand)
     self.player1.hand.move_card(self.player1.hand)
     #player1 dealing a second card
-    self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.split_cover=tk.Canvas(self.table,width=240,height=240,bg="#228822",bd=0,highlightthickness=0)
     self.split_cover.place(x=80,y=280)
     self.drawing_deck.move_card(self.player1.hand)
     #player2 dealing a second (to second hand of player1)
-    self.split_cover=tk.Canvas(self.table,width=240,height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.split_cover=tk.Canvas(self.table,width=240,height=240,bg="#228822",bd=0,highlightthickness=0)
     self.split_cover.place(x=480,y=280)
     self.drawing_deck.move_card(self.player2.hand)
     #determines whether the player won immediately - its black jack check
@@ -276,6 +276,13 @@ class CGameTable:
 
   #--------------------------------------------------------------------------------
   def deal_cards(self):
+    # make player 2 passive
+    self.player2.state = "passive"
+    # overcover old card images
+    self.dealer_cover=tk.Canvas(self.table,width=self.table.winfo_screenwidth(),height=240,bg="#228822",bd=0,highlightthickness=0)
+    self.dealer_cover.place(x=0,y=265)
+    self.table_cover=tk.Canvas(self.table,width=self.table.winfo_screenwidth(),height=200,bg="#228822",bd=0,highlightthickness=0)
+    self.table_cover.place(x=0,y=30)
     #discard player(s) and dealer hands to discard deck
     for i in self.players:
       for _ in range (len(i.hand.cards)):
@@ -293,7 +300,12 @@ class CGameTable:
     #determines whether the player won immediately - its black jack check
     if self.active_player().hand.calculate_hand_value(self.active_player().hand)==21:
       self.show_win_lose_label(self.active_player(),"bj")
+      self.but_s[0] = 1
+      self.button_states()
       self.player_switch()
+    else: 
+      self.but_s[1] = 1
+      self.but_s[2] = 1
 
     #if sum of the player´s hand is <9,11> double botton is not disabled
     if 8<(self.player1.hand.cards[0].value + self.player1.hand.cards[1].value)<12:
@@ -363,7 +375,7 @@ class CGameTable:
       self.text="Lose!"
       #self.text=dict_en_cz["lose"][lang40]
       if aplayer==self.player1 and len(self.player2.hand.cards)==0:
-        x_pos+=30
+        x_pos+=35
       elif aplayer==self.player1 and len(self.player2.hand.cards)!=0:
         x_pos-=t_width/4-30
       elif aplayer==self.player2:
@@ -421,7 +433,7 @@ class CGameTable:
   #-------------------------------------------------------------------------------- 
   def player_switch(self):
     #switch from player1 game to player2 game if he has any cards
-    self.active_player().state="stand"
+    self.active_player().state="passive"
     try:
       # no effect but it will try, if other active player exist
       if 8<(self.player2.hand.cards[0].value + self.player2.hand.cards[1].value)<12:
@@ -436,7 +448,11 @@ class CGameTable:
       self.but_s[5] = 0
       self.button_states()
     except: pass
-    
+    if self.player1.hand.calculate_hand_value(self.player1.hand)>21:
+      self.player1.state="lose"
+      self.show_win_lose_label(self.player1,"lose")
+    elif self.player1.hand.calculate_hand_value(self.player1.hand)==21 and len(self.player1.hand.cards)==0:
+      self.but_s[0]==1
     if self.player1.state!="active" and self.player2.state!="active":
       self.dealers_game()
 
@@ -446,21 +462,17 @@ class CGameTable:
     self.but_s[1]=0
     self.but_s[2]=0
     self.button_states()
-    self.dealer_cover=tk.Canvas(self.table,
-                                width=240,
-                                height=185,
-                                bg="#228822",
-                                bd=0,
-                                highlightthickness=0)
-    self.dealer_cover.place(x=280,y=40)
+    self.dealer_cover=tk.Canvas(self.table,width=self.table.winfo_screenwidth(),height=185,bg="#228822",bd=0,highlightthickness=0)
+    self.dealer_cover.place(x=0,y=40)
     self.drawing_deck.move_card(hand, ay=50)
     while hand.calculate_hand_value(hand)<17:
       self.drawing_deck.table_cleaner(hand)
       self.drawing_deck.move_card(hand, ay=50)
     self.game_evaluation()
+    
+  # switch on deal button 
     self.but_s[0] = 1
-    self.button_states()  
-
+    self.button_states()
 #===============================================================================
 #create widget for game quiting
 class CEscWin:
@@ -590,7 +602,7 @@ class CDeck:
       #create deck from all suit and rank combination, this operation will repeat 'anum_decks' times 
       self.cards = [
           Card(suit, rank) for _ in range(anum_decks)
-          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace']]     
+          for suit in ['Clubs', 'Diamonds', 'Hearts', 'Spades'] for rank in ['Queen','King', 'Ace']]     
       #'2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen','King', 'Ace'
       # shuffle created deck
       random.shuffle(self.cards)
