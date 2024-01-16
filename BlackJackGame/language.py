@@ -22,4 +22,5 @@ dict_en_cz = {
     "lose": ["Lose!", "Prohra!"],
     "win": ["Win!", "Výhra!"],
     "draw": ["Draw!", "Remíza!"],
+    "deal": ["Deal", "Rozdej"],
 }

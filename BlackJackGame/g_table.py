@@ -73,7 +73,7 @@ class CGameTable:
     #create game buttons
     #button "deal cards"
     self.deal_button = tk.Button(self.table,
-                                 text="Deal",
+                                 text=dict_en_cz["deal"][lang40],
                                  font=("Arial", 10, "bold"),
                                  width=8,
                                  border=2,
@@ -172,7 +172,7 @@ class CGameTable:
         font=("Arial", 12, "bold"),
         bg=self.bg_color,
         foreground="#dddd00")
-    self.display_budget.pack()
+    self.display_budget.place(x=self.table_width/5*4,y=10)
     #assign key ESC as 'escape' function
     self.table.bind(
         '<Escape>',
@@ -280,19 +280,19 @@ class CGameTable:
     self.dealer_cover=tk.Canvas(self.table,width=self.table.winfo_screenwidth(),height=240,bg="#228822",bd=0,highlightthickness=0)
     self.dealer_cover.place(x=0,y=265)
     self.table_cover=tk.Canvas(self.table,width=self.table.winfo_screenwidth(),height=200,bg="#228822",bd=0,highlightthickness=0)
-    self.table_cover.place(x=0,y=30)
+    self.table_cover.place(x=0,y=32)
     #discard player(s) and dealer hands to discard deck
     for i in self.players:
       for _ in range (len(i.hand.cards)):
         i.hand.move_card(self.discard_deck, ashow_card=False)
-
-    #define variables for button_states arguments
-    #deal cards to dealer
-    self.drawing_deck.move_card(self.dealer.hand, ay=50)
+    # card deal slowing
+    sleep(0.2)
     #deal cards to player
     self.drawing_deck.move_card(self.player1.hand)
     self.drawing_deck.table_cleaner(self.player1.hand)
     self.drawing_deck.move_card(self.player1.hand)
+    #deal cards to dealer
+    self.drawing_deck.move_card(self.dealer.hand, ay=50)
     #make player1 active
     self.player1.state="active"
     #switch off 'deal' button
@@ -302,6 +302,7 @@ class CGameTable:
       self.show_win_lose_label(self.active_player(),"bj")
       self.but_s[0] = 1
       self.button_states()
+      sleep(0.2)
       self.player_switch()
     else: 
       self.but_s[1] = 1
@@ -464,6 +465,7 @@ class CGameTable:
     self.dealer_cover.place(x=0,y=40)
     self.drawing_deck.move_card(hand, ay=50)
     while hand.calculate_hand_value(hand)<17:
+      sleep(0.2)
       self.drawing_deck.table_cleaner(hand)
       self.drawing_deck.move_card(hand, ay=50)
     self.game_evaluation()
@@ -535,7 +537,6 @@ class CWidgetInfo:
   #--------------------------------------------------------------------------------
   #show info widget
   def show_tooltip(self, aevent):
-
 
     #returt info widget position (x, y)
     x, y, _, _ = self.widget.bbox("insert")
@@ -633,9 +634,8 @@ class CDeck:
                                   '10':8, 'Jack':9, 'Queen':10, 'King':11, 'Ace':12}
     
     #returns card image position multiplier in case of split in this function
-
-
     t_width = game.table_width
+
     # purpose of local variable 'lcs' is code shortening 
     lcs = len(ato.cards)
 
